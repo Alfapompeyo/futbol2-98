@@ -9,7 +9,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("categories");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
-  const [categories, setCategories] = useState([{ id: 1, name: "sub-17" }]);
+  const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([]);
 
   const handleAddCategory = (name: string) => {
     setCategories([...categories, { id: Date.now(), name }]);

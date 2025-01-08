@@ -16,7 +16,7 @@ export default function Login() {
     <div className="min-h-screen bg-[#E8F1FF] flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md space-y-6">
         <div className="flex justify-center">
-          <img src="/lovable-uploads/676f7f09-d884-481e-b608-45b269e4aa59.png" alt="Logo" className="w-16 h-16" />
+          <img src="/lovable-uploads/0893c2ac-1331-47e8-b8c6-504c49064b2f.png" alt="Logo" className="w-16 h-16" />
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
