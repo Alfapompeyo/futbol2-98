@@ -12,7 +12,7 @@ export function Sidebar() {
   return (
     <div className="w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4">
-        <img src="/lovable-uploads/0893c2ac-1331-47e8-b8c6-504c49064b2f.png" alt="Logo" className="w-12 h-12" />
+        <img src="/lovable-uploads/1030e0ed-b227-41ae-9c72-5bb0fa1a71b7.png" alt="Logo" className="w-12 h-12" />
       </div>
       <nav className="flex-1 px-2">
         {menuItems.map((item) => (
