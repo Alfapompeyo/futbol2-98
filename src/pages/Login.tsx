@@ -2,14 +2,43 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Login() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/dashboard");
+    
+    try {
+      // Save email and password to the database
+      const { error } = await supabase
+        .from('user_emails')
+        .insert([
+          { 
+            email: credentials.email,
+            password: credentials.password
+          }
+        ]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Email saved successfully",
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
   };
 
   return (
