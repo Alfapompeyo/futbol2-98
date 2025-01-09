@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AddPlayerModal } from "@/components/modals/AddPlayerModal";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface Player {
   id: string;
@@ -27,6 +28,7 @@ interface Player {
   height?: string;
   weight?: string;
   position?: string;
+  image_url?: string;
 }
 
 interface PlayersListProps {
@@ -39,11 +41,28 @@ export function PlayersList({ players, onEdit, onDelete }: PlayersListProps) {
   const [playerToDelete, setPlayerToDelete] = useState<string | null>(null);
   const [playerToEdit, setPlayerToEdit] = useState<Player | null>(null);
 
+  const getPositionLabel = (value: string) => {
+    const positions = {
+      portero: "Portero",
+      defensa_central: "Defensa Central",
+      lateral_izquierdo: "Lateral Izquierdo",
+      lateral_derecho: "Lateral Derecho",
+      mediocampista_ofensivo: "Mediocampista Ofensivo",
+      mediocampista_defensivo: "Mediocampista Defensivo",
+      mediocampista_mixto: "Mediocampista Mixto",
+      delantero_centro: "Delantero Centro",
+      extremo_izquierdo: "Extremo Izquierdo",
+      extremo_derecho: "Extremo Derecho",
+    };
+    return positions[value as keyof typeof positions] || value;
+  };
+
   return (
     <>
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-[50px]"></TableHead>
             <TableHead>Nombre</TableHead>
             <TableHead>Edad</TableHead>
             <TableHead>Altura</TableHead>
@@ -55,11 +74,17 @@ export function PlayersList({ players, onEdit, onDelete }: PlayersListProps) {
         <TableBody>
           {players.map((player) => (
             <TableRow key={player.id}>
+              <TableCell>
+                <Avatar>
+                  <AvatarImage src={player.image_url} alt={player.name} />
+                  <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </TableCell>
               <TableCell>{player.name}</TableCell>
               <TableCell>{player.age}</TableCell>
               <TableCell>{player.height}</TableCell>
               <TableCell>{player.weight}</TableCell>
-              <TableCell>{player.position}</TableCell>
+              <TableCell>{player.position ? getPositionLabel(player.position) : ''}</TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

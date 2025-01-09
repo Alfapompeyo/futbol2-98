@@ -1,7 +1,24 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
+import { Image, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+
+const positions = [
+  { value: "portero", label: "Portero" },
+  { value: "defensa_central", label: "Defensa Central" },
+  { value: "lateral_izquierdo", label: "Lateral Izquierdo" },
+  { value: "lateral_derecho", label: "Lateral Derecho" },
+  { value: "mediocampista_ofensivo", label: "Mediocampista Ofensivo" },
+  { value: "mediocampista_defensivo", label: "Mediocampista Defensivo" },
+  { value: "mediocampista_mixto", label: "Mediocampista Mixto" },
+  { value: "delantero_centro", label: "Delantero Centro" },
+  { value: "extremo_izquierdo", label: "Extremo Izquierdo" },
+  { value: "extremo_derecho", label: "Extremo Derecho" },
+];
 
 interface Player {
   name: string;
@@ -9,6 +26,7 @@ interface Player {
   height: string;
   weight: string;
   position: string;
+  image_url?: string;
 }
 
 interface AddPlayerModalProps {
@@ -21,6 +39,7 @@ interface AddPlayerModalProps {
     height?: string;
     weight?: string;
     position?: string;
+    image_url?: string;
   };
 }
 
@@ -31,7 +50,10 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
     height: "",
     weight: "",
     position: "",
+    image_url: "",
   });
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (initialData) {
@@ -41,6 +63,7 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
         height: initialData.height || "",
         weight: initialData.weight || "",
         position: initialData.position || "",
+        image_url: initialData.image_url || "",
       });
     } else {
       setPlayer({
@@ -49,24 +72,96 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
         height: "",
         weight: "",
         position: "",
+        image_url: "",
       });
     }
   }, [initialData, isOpen]);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/functions/v1/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Error uploading image');
+
+      const { url } = await response.json();
+      setPlayer({ ...player, image_url: url });
+      toast({
+        title: "Éxito",
+        description: "Imagen subida correctamente",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error al subir la imagen",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onAdd(player);
-    setPlayer({ name: "", age: "", height: "", weight: "", position: "" });
+    setPlayer({ name: "", age: "", height: "", weight: "", position: "", image_url: "" });
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{initialData ? "Editar Jugador" : "Añadir Jugador"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="playerImage" className="text-sm font-medium">
+              Imagen
+            </label>
+            <div className="flex items-center gap-4">
+              {player.image_url ? (
+                <img 
+                  src={player.image_url} 
+                  alt="Player" 
+                  className="w-16 h-16 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Image className="w-8 h-8 text-gray-400" />
+                </div>
+              )}
+              <div className="flex-1">
+                <Input
+                  id="playerImage"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploading}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => document.getElementById('playerImage')?.click()}
+                  disabled={uploading}
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploading ? "Subiendo..." : "Subir imagen"}
+                </Button>
+              </div>
+            </div>
+          </div>
           <div className="space-y-2">
             <label htmlFor="playerName" className="text-sm font-medium">
               Nombre
@@ -115,12 +210,21 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
             <label htmlFor="position" className="text-sm font-medium">
               Posición
             </label>
-            <Input
-              id="position"
-              placeholder="Posición del jugador"
+            <Select
               value={player.position}
-              onChange={(e) => setPlayer({ ...player, position: e.target.value })}
-            />
+              onValueChange={(value) => setPlayer({ ...player, position: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona una posición" />
+              </SelectTrigger>
+              <SelectContent>
+                {positions.map((position) => (
+                  <SelectItem key={position.value} value={position.value}>
+                    {position.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button type="submit" className="w-full bg-[#0F172A] hover:bg-[#1E293B]">
             {initialData ? "Guardar Cambios" : "Añadir Jugador"}

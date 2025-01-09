@@ -27,6 +27,63 @@ export type Database = {
         }
         Relationships: []
       }
+      match_statistics: {
+        Row: {
+          assists: number | null
+          created_at: string
+          crosses: number | null
+          goal_types: string[] | null
+          goals: number | null
+          id: string
+          match_id: string
+          minutes_played: number | null
+          player_id: string
+          red_cards: number | null
+          yellow_cards: number | null
+        }
+        Insert: {
+          assists?: number | null
+          created_at?: string
+          crosses?: number | null
+          goal_types?: string[] | null
+          goals?: number | null
+          id?: string
+          match_id: string
+          minutes_played?: number | null
+          player_id: string
+          red_cards?: number | null
+          yellow_cards?: number | null
+        }
+        Update: {
+          assists?: number | null
+          created_at?: string
+          crosses?: number | null
+          goal_types?: string[] | null
+          goals?: number | null
+          id?: string
+          match_id?: string
+          minutes_played?: number | null
+          player_id?: string
+          red_cards?: number | null
+          yellow_cards?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_statistics_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_statistics_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           category_id: string
@@ -79,6 +136,7 @@ export type Database = {
           created_at: string
           height: string | null
           id: string
+          image_url: string | null
           name: string
           position: string | null
           weight: string | null
@@ -89,6 +147,7 @@ export type Database = {
           created_at?: string
           height?: string | null
           id?: string
+          image_url?: string | null
           name: string
           position?: string | null
           weight?: string | null
@@ -99,6 +158,7 @@ export type Database = {
           created_at?: string
           height?: string | null
           id?: string
+          image_url?: string | null
           name?: string
           position?: string | null
           weight?: string | null
