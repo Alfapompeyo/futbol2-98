@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -22,40 +23,41 @@ serve(async (req) => {
       )
     }
 
+    // Create Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const sanitizedFileName = file.name.replace(/[^\x00-\x7F]/g, '');
-    const fileExt = sanitizedFileName.split('.').pop()
-    const filePath = `${crypto.randomUUID()}.${fileExt}`
+    // Create a unique file name
+    const fileName = `${crypto.randomUUID()}-${file.name}`
 
+    // Upload file to 'player-images' bucket
     const { data, error: uploadError } = await supabase.storage
       .from('player-images')
-      .upload(filePath, file, {
-        contentType: file.type,
-        upsert: false
-      })
+      .upload(fileName, file)
 
     if (uploadError) {
+      console.error('Upload error:', uploadError)
       return new Response(
-        JSON.stringify({ error: 'Failed to upload file', details: uploadError }),
+        JSON.stringify({ error: 'Error uploading file' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       )
     }
 
+    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('player-images')
-      .getPublicUrl(filePath)
+      .getPublicUrl(fileName)
 
     return new Response(
       JSON.stringify({ url: publicUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
   } catch (error) {
+    console.error('Server error:', error)
     return new Response(
-      JSON.stringify({ error: 'An unexpected error occurred', details: error.message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

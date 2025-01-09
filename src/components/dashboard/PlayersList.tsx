@@ -142,7 +142,11 @@ export function PlayersList({ players, onEdit, onDelete }: PlayersListProps) {
         onClose={() => setPlayerToEdit(null)}
         onAdd={(updatedPlayer) => {
           if (playerToEdit) {
-            onEdit({ ...updatedPlayer, id: playerToEdit.id });
+            onEdit({ 
+              ...updatedPlayer, 
+              id: playerToEdit.id,
+              age: updatedPlayer.age ? parseInt(updatedPlayer.age) : undefined 
+            });
             setPlayerToEdit(null);
           }
         }}
