@@ -93,6 +93,60 @@ export default function Dashboard() {
     fetchPlayers(selectedCategory);
   };
 
+  const handleEditPlayer = async (player: any) => {
+    const { error } = await supabase
+      .from("players")
+      .update({
+        name: player.name,
+        age: parseInt(player.age),
+        height: player.height,
+        weight: player.weight,
+        position: player.position,
+      })
+      .eq("id", player.id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar el jugador",
+      });
+      return;
+    }
+
+    toast({
+      title: "Éxito",
+      description: "Jugador actualizado correctamente",
+    });
+    if (selectedCategory) {
+      fetchPlayers(selectedCategory);
+    }
+  };
+
+  const handleDeletePlayer = async (playerId: string) => {
+    const { error } = await supabase
+      .from("players")
+      .delete()
+      .eq("id", playerId);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el jugador",
+      });
+      return;
+    }
+
+    toast({
+      title: "Éxito",
+      description: "Jugador eliminado correctamente",
+    });
+    if (selectedCategory) {
+      fetchPlayers(selectedCategory);
+    }
+  };
+
   const handleAddMatch = async (match: any) => {
     if (!selectedCategory) return;
     
@@ -170,7 +224,11 @@ export default function Dashboard() {
         {players.length > 0 && (
           <div className="mt-8">
             <h2 className="text-xl font-bold mb-4">Jugadores</h2>
-            <PlayersList players={players} />
+            <PlayersList 
+              players={players} 
+              onEdit={handleEditPlayer}
+              onDelete={handleDeletePlayer}
+            />
           </div>
         )}
 

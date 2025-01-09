@@ -1,22 +1,57 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface Player {
+  name: string;
+  age: string;
+  height: string;
+  weight: string;
+  position: string;
+}
 
 interface AddPlayerModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (player: any) => void;
+  onAdd: (player: Player) => void;
+  initialData?: {
+    name: string;
+    age?: number;
+    height?: string;
+    weight?: string;
+    position?: string;
+  };
 }
 
-export function AddPlayerModal({ isOpen, onClose, onAdd }: AddPlayerModalProps) {
-  const [player, setPlayer] = useState({
+export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlayerModalProps) {
+  const [player, setPlayer] = useState<Player>({
     name: "",
     age: "",
     height: "",
     weight: "",
     position: "",
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setPlayer({
+        name: initialData.name || "",
+        age: initialData.age?.toString() || "",
+        height: initialData.height || "",
+        weight: initialData.weight || "",
+        position: initialData.position || "",
+      });
+    } else {
+      setPlayer({
+        name: "",
+        age: "",
+        height: "",
+        weight: "",
+        position: "",
+      });
+    }
+  }, [initialData, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +64,7 @@ export function AddPlayerModal({ isOpen, onClose, onAdd }: AddPlayerModalProps) 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Añadir Jugador a sub-17</DialogTitle>
+          <DialogTitle>{initialData ? "Editar Jugador" : "Añadir Jugador"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -88,7 +123,7 @@ export function AddPlayerModal({ isOpen, onClose, onAdd }: AddPlayerModalProps) 
             />
           </div>
           <Button type="submit" className="w-full bg-[#0F172A] hover:bg-[#1E293B]">
-            Añadir Jugador
+            {initialData ? "Guardar Cambios" : "Añadir Jugador"}
           </Button>
         </form>
       </DialogContent>
