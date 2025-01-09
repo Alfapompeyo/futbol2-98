@@ -9,6 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          category_id: string
+          created_at: string
+          date: string
+          id: string
+          location: string | null
+          opponent: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          date: string
+          id?: string
+          location?: string | null
+          opponent: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          location?: string | null
+          opponent?: string
+        }
+        Relationships: []
+      }
       nextronic: {
         Row: {
           content: string | null
@@ -24,6 +69,39 @@ export type Database = {
           content?: string | null
           created_at?: string
           id?: number
+        }
+        Relationships: []
+      }
+      players: {
+        Row: {
+          age: number | null
+          category_id: string
+          created_at: string
+          height: string | null
+          id: string
+          name: string
+          position: string | null
+          weight: string | null
+        }
+        Insert: {
+          age?: number | null
+          category_id: string
+          created_at?: string
+          height?: string | null
+          id?: string
+          name: string
+          position?: string | null
+          weight?: string | null
+        }
+        Update: {
+          age?: number | null
+          category_id?: string
+          created_at?: string
+          height?: string | null
+          id?: string
+          name?: string
+          position?: string | null
+          weight?: string | null
         }
         Relationships: []
       }
