@@ -6,6 +6,7 @@ import { AddCategoryModal } from "@/components/modals/AddCategoryModal";
 import { AddPlayerModal } from "@/components/modals/AddPlayerModal";
 import { AddMatchModal } from "@/components/modals/AddMatchModal";
 import { PlayersList } from "@/components/dashboard/PlayersList";
+import { MatchesList } from "@/components/dashboard/MatchesList";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -17,11 +18,23 @@ export default function Dashboard() {
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [players, setPlayers] = useState<any[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [activeView, setActiveView] = useState<"players" | "matches">("players");
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      if (activeView === "players") {
+        fetchPlayers(selectedCategory);
+      } else {
+        fetchMatches(selectedCategory);
+      }
+    }
+  }, [selectedCategory, activeView]);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase.from("categories").select("*");
@@ -51,6 +64,24 @@ export default function Dashboard() {
       return;
     }
     setPlayers(data);
+  };
+
+  const fetchMatches = async (categoryId: string) => {
+    const { data, error } = await supabase
+      .from("matches")
+      .select("*")
+      .eq("category_id", categoryId)
+      .order('date', { ascending: false });
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudieron cargar los partidos",
+      });
+      return;
+    }
+    setMatches(data);
   };
 
   const handleAddCategory = async (name: string) => {
@@ -91,6 +122,30 @@ export default function Dashboard() {
       description: "Jugador añadido correctamente",
     });
     fetchPlayers(selectedCategory);
+  };
+
+  const handleAddMatch = async (match: any) => {
+    if (!selectedCategory) return;
+    
+    const { error } = await supabase.from("matches").insert([
+      { ...match, category_id: selectedCategory }
+    ]);
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo crear el partido",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Éxito",
+      description: "Partido creado correctamente",
+    });
+    fetchMatches(selectedCategory);
+    setActiveView("matches");
   };
 
   const handleEditPlayer = async (player: any) => {
@@ -147,28 +202,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleAddMatch = async (match: any) => {
-    if (!selectedCategory) return;
-    
-    const { error } = await supabase.from("matches").insert([
-      { ...match, category_id: selectedCategory }
-    ]);
-    
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo crear el partido",
-      });
-      return;
-    }
-    
-    toast({
-      title: "Éxito",
-      description: "Partido creado correctamente",
-    });
-  };
-
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -209,6 +242,7 @@ export default function Dashboard() {
               onAddPlayer={() => {
                 setSelectedCategory(category.id);
                 setShowAddPlayer(true);
+                setActiveView("players");
               }}
               onAddMatch={() => {
                 setSelectedCategory(category.id);
@@ -216,20 +250,49 @@ export default function Dashboard() {
               }}
               onShowPlayers={() => {
                 setSelectedCategory(category.id);
+                setActiveView("players");
                 fetchPlayers(category.id);
               }}
             />
           ))}
         </div>
 
-        {players.length > 0 && (
+        {selectedCategory && (
           <div className="mt-8">
-            <h2 className="text-xl font-bold mb-4">Jugadores</h2>
-            <PlayersList 
-              players={players} 
-              onEdit={handleEditPlayer}
-              onDelete={handleDeletePlayer}
-            />
+            <div className="flex gap-4 mb-4">
+              <button
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeView === "players"
+                    ? "bg-[#9333EA] text-white"
+                    : "text-gray-600 border border-gray-300"
+                } rounded-lg`}
+                onClick={() => setActiveView("players")}
+              >
+                Jugadores
+              </button>
+              <button
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeView === "matches"
+                    ? "bg-[#9333EA] text-white"
+                    : "text-gray-600 border border-gray-300"
+                } rounded-lg`}
+                onClick={() => setActiveView("matches")}
+              >
+                Partidos
+              </button>
+            </div>
+
+            {activeView === "players" && players.length > 0 && (
+              <PlayersList 
+                players={players} 
+                onEdit={handleEditPlayer}
+                onDelete={handleDeletePlayer}
+              />
+            )}
+
+            {activeView === "matches" && matches.length > 0 && (
+              <MatchesList matches={matches} />
+            )}
           </div>
         )}
 

@@ -32,7 +32,7 @@ export type Database = {
           assists: number | null
           created_at: string
           crosses: number | null
-          goal_types: string[] | null
+          goal_types: Json[] | null
           goals: number | null
           id: string
           match_id: string
@@ -45,7 +45,7 @@ export type Database = {
           assists?: number | null
           created_at?: string
           crosses?: number | null
-          goal_types?: string[] | null
+          goal_types?: Json[] | null
           goals?: number | null
           id?: string
           match_id: string
@@ -58,7 +58,7 @@ export type Database = {
           assists?: number | null
           created_at?: string
           crosses?: number | null
-          goal_types?: string[] | null
+          goal_types?: Json[] | null
           goals?: number | null
           id?: string
           match_id?: string
