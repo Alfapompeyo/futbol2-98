@@ -31,6 +31,18 @@ interface MatchesListProps {
 }
 
 export function MatchesList({ matches, onEdit, onDelete }: MatchesListProps) {
+  const handleEdit = (match: Match) => {
+    if (onEdit) {
+      onEdit(match);
+    }
+  };
+
+  const handleDelete = (matchId: string) => {
+    if (onDelete) {
+      onDelete(matchId);
+    }
+  };
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -60,13 +72,13 @@ export function MatchesList({ matches, onEdit, onDelete }: MatchesListProps) {
                   <ContextMenuContent className="w-64">
                     <ContextMenuItem
                       className="cursor-pointer"
-                      onClick={() => onEdit?.(match)}
+                      onClick={() => handleEdit(match)}
                     >
                       Editar partido
                     </ContextMenuItem>
                     <ContextMenuItem
                       className="cursor-pointer text-red-600"
-                      onClick={() => onDelete?.(match.id)}
+                      onClick={() => handleDelete(match.id)}
                     >
                       Eliminar partido
                     </ContextMenuItem>
