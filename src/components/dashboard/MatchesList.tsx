@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MoreHorizontal } from "lucide-react";
+import { MoreVertical, Edit, Trash } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -10,11 +10,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
 interface Match {
@@ -63,27 +63,26 @@ export function MatchesList({ matches, onEdit, onDelete }: MatchesListProps) {
               </TableCell>
               <TableCell>{match.location || "No especificada"}</TableCell>
               <TableCell>
-                <ContextMenu>
-                  <ContextMenuTrigger asChild>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
+                      <MoreVertical className="h-4 w-4" />
                     </Button>
-                  </ContextMenuTrigger>
-                  <ContextMenuContent className="w-64">
-                    <ContextMenuItem
-                      className="cursor-pointer"
-                      onClick={() => handleEdit(match)}
-                    >
-                      Editar partido
-                    </ContextMenuItem>
-                    <ContextMenuItem
-                      className="cursor-pointer text-red-600"
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(match)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
                       onClick={() => handleDelete(match.id)}
+                      className="text-red-600"
                     >
-                      Eliminar partido
-                    </ContextMenuItem>
-                  </ContextMenuContent>
-                </ContextMenu>
+                      <Trash className="mr-2 h-4 w-4" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
