@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [matches, setMatches] = useState<any[]>([]);
   const [activeView, setActiveView] = useState<"players" | "matches">("players");
   const { toast } = useToast();
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -146,6 +147,36 @@ export default function Dashboard() {
     });
     fetchMatches(selectedCategory);
     setActiveView("matches");
+  };
+
+  const handleEditMatch = async (match: any) => {
+    // Por ahora solo mostramos el modal de edición
+    setSelectedMatch(match);
+    setShowAddMatch(true);
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    const { error } = await supabase
+      .from("matches")
+      .delete()
+      .eq("id", matchId);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el partido",
+      });
+      return;
+    }
+
+    toast({
+      title: "Éxito",
+      description: "Partido eliminado correctamente",
+    });
+    if (selectedCategory) {
+      fetchMatches(selectedCategory);
+    }
   };
 
   const handleEditPlayer = async (player: any) => {
@@ -291,7 +322,11 @@ export default function Dashboard() {
             )}
 
             {activeView === "matches" && matches.length > 0 && (
-              <MatchesList matches={matches} />
+              <MatchesList 
+                matches={matches}
+                onEdit={handleEditMatch}
+                onDelete={handleDeleteMatch}
+              />
             )}
           </div>
         )}
