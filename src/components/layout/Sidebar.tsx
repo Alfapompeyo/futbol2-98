@@ -1,14 +1,27 @@
 import { Gift, Activity, UserCog, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const menuItems = [
-  { name: "Fútbol", icon: Gift },
-  { name: "Parte Médica", icon: Activity },
-  { name: "Parte Física", icon: UserCog },
-  { name: "Cerrar Sesión", icon: LogOut },
+  { name: "Fútbol", icon: Gift, path: "/dashboard" },
+  { name: "Parte Médica", icon: Activity, path: "/dashboard/medical" },
+  { name: "Parte Física", icon: UserCog, path: "/dashboard/physical" },
+  { name: "Cerrar Sesión", icon: LogOut, path: "/login" },
 ];
 
 export function Sidebar() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleNavigation = (path: string, name: string) => {
+    if (name === "Cerrar Sesión") {
+      // Here you could add logout logic if needed
+      navigate(path);
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <div className="w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4">
@@ -18,8 +31,12 @@ export function Sidebar() {
         {menuItems.map((item) => (
           <button
             key={item.name}
+            onClick={() => handleNavigation(item.path, item.name)}
             className={cn(
-              "w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 rounded-lg hover:bg-gray-100",
+              "w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg",
+              location.pathname === item.path
+                ? "bg-[#0F172A] text-white"
+                : "text-gray-700 hover:bg-gray-100",
               item.name === "Cerrar Sesión" && "mt-auto"
             )}
           >

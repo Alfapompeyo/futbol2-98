@@ -173,6 +173,7 @@ export default function Dashboard() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 p-8">
+        <h1 className="text-2xl font-bold mb-4">Fútbol</h1>
         <div className="flex gap-4 mb-8">
           <button
             className={`px-4 py-2 text-sm font-medium ${
