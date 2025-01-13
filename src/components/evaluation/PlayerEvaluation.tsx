@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Player {
   id: string;
@@ -15,9 +17,25 @@ interface PlayerEvaluationProps {
   onBack: () => void;
 }
 
+interface EvaluationForm {
+  yellowCards: number;
+  redCards: number;
+  goals: number;
+  assists: number;
+}
+
 export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluationProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [players, setPlayers] = useState<Player[]>([]);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [evaluation, setEvaluation] = useState<EvaluationForm>({
+    yellowCards: 0,
+    redCards: 0,
+    goals: 0,
+    assists: 0,
+  });
+  const { toast } = useToast();
 
   const fetchPlayers = async () => {
     const { data, error } = await supabase
@@ -28,7 +46,53 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
 
     if (!error && data) {
       setPlayers(data);
+      setShowDropdown(true);
     }
+  };
+
+  const handlePlayerSelect = (player: Player) => {
+    setSelectedPlayer(player);
+    setSearchQuery(player.name);
+    setShowDropdown(false);
+  };
+
+  const handleSubmitEvaluation = async () => {
+    if (!selectedPlayer) return;
+
+    const { error } = await supabase.from("match_statistics").insert([
+      {
+        match_id: matchId,
+        player_id: selectedPlayer.id,
+        yellow_cards: evaluation.yellowCards,
+        red_cards: evaluation.redCards,
+        goals: evaluation.goals,
+        assists: evaluation.assists,
+      },
+    ]);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo guardar la evaluación",
+      });
+      return;
+    }
+
+    toast({
+      title: "Éxito",
+      description: "Evaluación guardada correctamente",
+    });
+
+    // Reset form
+    setSelectedPlayer(null);
+    setSearchQuery("");
+    setEvaluation({
+      yellowCards: 0,
+      redCards: 0,
+      goals: 0,
+      assists: 0,
+    });
   };
 
   return (
@@ -53,23 +117,106 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
               setSearchQuery(e.target.value);
               fetchPlayers();
             }}
+            onFocus={() => {
+              if (searchQuery) fetchPlayers();
+            }}
             className="pl-10"
           />
+          
+          {showDropdown && players.length > 0 && (
+            <div className="absolute w-full mt-1 bg-white border rounded-md shadow-lg z-10">
+              {players.map((player) => (
+                <div
+                  key={player.id}
+                  className="p-3 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => handlePlayerSelect(player)}
+                >
+                  <div className="font-medium">{player.name}</div>
+                  {player.position && (
+                    <div className="text-sm text-gray-500">{player.position}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="space-y-4">
-          {players.map((player) => (
-            <div
-              key={player.id}
-              className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-            >
-              <h3 className="font-medium">{player.name}</h3>
-              {player.position && (
-                <p className="text-sm text-gray-600">{player.position}</p>
-              )}
+        {selectedPlayer && (
+          <div className="bg-gray-50 p-6 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">
+              Evaluación para {selectedPlayer.name}
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tarjetas Amarillas
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={evaluation.yellowCards}
+                  onChange={(e) => setEvaluation({
+                    ...evaluation,
+                    yellowCards: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tarjetas Rojas
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={evaluation.redCards}
+                  onChange={(e) => setEvaluation({
+                    ...evaluation,
+                    redCards: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Goles
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={evaluation.goals}
+                  onChange={(e) => setEvaluation({
+                    ...evaluation,
+                    goals: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Asistencias
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={evaluation.assists}
+                  onChange={(e) => setEvaluation({
+                    ...evaluation,
+                    assists: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
             </div>
-          ))}
-        </div>
+            
+            <Button 
+              onClick={handleSubmitEvaluation}
+              className="w-full bg-[#0F172A] hover:bg-[#1E293B]"
+            >
+              Guardar Evaluación
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
