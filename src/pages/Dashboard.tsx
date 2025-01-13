@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [activeView, setActiveView] = useState<"players" | "matches">("players");
   const { toast } = useToast();
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [categoryToEdit, setCategoryToEdit] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -85,152 +86,81 @@ export default function Dashboard() {
     setMatches(data);
   };
 
+  const handleEditCategory = async (categoryId: string) => {
+    const categoryToEdit = categories.find(cat => cat.id === categoryId);
+    if (categoryToEdit) {
+      setCategoryToEdit(categoryToEdit);
+      setShowAddCategory(true);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      await supabase.from('players').delete().eq('category_id', categoryId);
+      await supabase.from('matches').delete().eq('category_id', categoryId);
+      
+      const { error } = await supabase.from('categories').delete().eq('id', categoryId);
+      
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Categoría eliminada correctamente",
+      });
+
+      if (selectedCategory === categoryId) {
+        setSelectedCategory(null);
+        setPlayers([]);
+        setMatches([]);
+      }
+
+      fetchCategories();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la categoría",
+      });
+    }
+  };
+
   const handleAddCategory = async (name: string) => {
-    const { error } = await supabase.from("categories").insert([{ name }]);
-    if (error) {
+    if (categoryToEdit) {
+      const { error } = await supabase
+        .from("categories")
+        .update({ name })
+        .eq('id', categoryToEdit.id);
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No se pudo actualizar la categoría",
+        });
+        return;
+      }
+
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo crear la categoría",
+        title: "Éxito",
+        description: "Categoría actualizada correctamente",
       });
-      return;
+      setCategoryToEdit(null);
+    } else {
+      const { error } = await supabase.from("categories").insert([{ name }]);
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No se pudo crear la categoría",
+        });
+        return;
+      }
+      toast({
+        title: "Éxito",
+        description: "Categoría creada correctamente",
+      });
     }
-    toast({
-      title: "Éxito",
-      description: "Categoría creada correctamente",
-    });
     fetchCategories();
-  };
-
-  const handleAddPlayer = async (player: any) => {
-    if (!selectedCategory) return;
-    
-    const { error } = await supabase.from("players").insert([
-      { ...player, category_id: selectedCategory }
-    ]);
-    
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo añadir el jugador",
-      });
-      return;
-    }
-    
-    toast({
-      title: "Éxito",
-      description: "Jugador añadido correctamente",
-    });
-    fetchPlayers(selectedCategory);
-  };
-
-  const handleAddMatch = async (match: any) => {
-    if (!selectedCategory) return;
-    
-    const { error } = await supabase.from("matches").insert([
-      { ...match, category_id: selectedCategory }
-    ]);
-    
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo crear el partido",
-      });
-      return;
-    }
-    
-    toast({
-      title: "Éxito",
-      description: "Partido creado correctamente",
-    });
-    fetchMatches(selectedCategory);
-    setActiveView("matches");
-  };
-
-  const handleEditMatch = async (match: any) => {
-    // Por ahora solo mostramos el modal de edición
-    setSelectedMatch(match);
-    setShowAddMatch(true);
-  };
-
-  const handleDeleteMatch = async (matchId: string) => {
-    const { error } = await supabase
-      .from("matches")
-      .delete()
-      .eq("id", matchId);
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo eliminar el partido",
-      });
-      return;
-    }
-
-    toast({
-      title: "Éxito",
-      description: "Partido eliminado correctamente",
-    });
-    if (selectedCategory) {
-      fetchMatches(selectedCategory);
-    }
-  };
-
-  const handleEditPlayer = async (player: any) => {
-    const { error } = await supabase
-      .from("players")
-      .update({
-        name: player.name,
-        age: parseInt(player.age),
-        height: player.height,
-        weight: player.weight,
-        position: player.position,
-      })
-      .eq("id", player.id);
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo actualizar el jugador",
-      });
-      return;
-    }
-
-    toast({
-      title: "Éxito",
-      description: "Jugador actualizado correctamente",
-    });
-    if (selectedCategory) {
-      fetchPlayers(selectedCategory);
-    }
-  };
-
-  const handleDeletePlayer = async (playerId: string) => {
-    const { error } = await supabase
-      .from("players")
-      .delete()
-      .eq("id", playerId);
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo eliminar el jugador",
-      });
-      return;
-    }
-
-    toast({
-      title: "Éxito",
-      description: "Jugador eliminado correctamente",
-    });
-    if (selectedCategory) {
-      fetchPlayers(selectedCategory);
-    }
   };
 
   return (
@@ -262,13 +192,17 @@ export default function Dashboard() {
         </div>
 
         <div className="mb-8">
-          <AddCategoryButton onClick={() => setShowAddCategory(true)} />
+          <AddCategoryButton onClick={() => {
+            setCategoryToEdit(null);
+            setShowAddCategory(true);
+          }} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((category) => (
             <CategoryCard
               key={category.id}
+              id={category.id}
               name={category.name}
               onAddPlayer={() => {
                 setSelectedCategory(category.id);
@@ -284,6 +218,8 @@ export default function Dashboard() {
                 setActiveView("players");
                 fetchPlayers(category.id);
               }}
+              onEdit={handleEditCategory}
+              onDelete={handleDeleteCategory}
             />
           ))}
         </div>
@@ -333,8 +269,12 @@ export default function Dashboard() {
 
         <AddCategoryModal
           isOpen={showAddCategory}
-          onClose={() => setShowAddCategory(false)}
+          onClose={() => {
+            setShowAddCategory(false);
+            setCategoryToEdit(null);
+          }}
           onAdd={handleAddCategory}
+          initialData={categoryToEdit?.name}
         />
 
         <AddPlayerModal
