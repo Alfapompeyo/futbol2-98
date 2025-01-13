@@ -38,11 +38,16 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
   const { toast } = useToast();
 
   const fetchPlayers = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from("players")
       .select("id, name, position")
-      .eq("category_id", categoryId)
-      .ilike("name", `%${searchQuery}%`);
+      .eq("category_id", categoryId);
+    
+    if (searchQuery) {
+      query = query.ilike("name", `%${searchQuery}%`);
+    }
+
+    const { data, error } = await query;
 
     if (!error && data) {
       setPlayers(data);
@@ -118,13 +123,13 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
               fetchPlayers();
             }}
             onFocus={() => {
-              if (searchQuery) fetchPlayers();
+              fetchPlayers();
             }}
             className="pl-10"
           />
           
           {showDropdown && players.length > 0 && (
-            <div className="absolute w-full mt-1 bg-white border rounded-md shadow-lg z-10">
+            <div className="absolute w-full mt-1 bg-white border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
               {players.map((player) => (
                 <div
                   key={player.id}
