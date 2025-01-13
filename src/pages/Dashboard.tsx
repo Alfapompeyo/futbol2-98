@@ -7,6 +7,7 @@ import { AddPlayerModal } from "@/components/modals/AddPlayerModal";
 import { AddMatchModal } from "@/components/modals/AddMatchModal";
 import { PlayersList } from "@/components/dashboard/PlayersList";
 import { MatchesList } from "@/components/dashboard/MatchesList";
+import { PlayerEvaluation } from "@/components/evaluation/PlayerEvaluation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -23,6 +24,8 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [selectedMatch, setSelectedMatch] = useState<any>(null);
   const [categoryToEdit, setCategoryToEdit] = useState<{ id: string; name: string } | null>(null);
+  const [showEvaluation, setShowEvaluation] = useState(false);
+  const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -317,6 +320,24 @@ export default function Dashboard() {
     }
   };
 
+  const handleEvaluateMatch = (matchId: string) => {
+    setSelectedMatchId(matchId);
+    setShowEvaluation(true);
+  };
+
+  if (showEvaluation && selectedCategory && selectedMatchId) {
+    return (
+      <PlayerEvaluation
+        categoryId={selectedCategory}
+        matchId={selectedMatchId}
+        onBack={() => {
+          setShowEvaluation(false);
+          setSelectedMatchId(null);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -416,6 +437,7 @@ export default function Dashboard() {
                 matches={matches}
                 onEdit={handleEditMatch}
                 onDelete={handleDeleteMatch}
+                onEvaluate={handleEvaluateMatch}
               />
             )}
           </div>

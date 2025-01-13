@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MoreVertical, Edit, Trash } from "lucide-react";
+import { MoreVertical, Edit, Trash, ClipboardList } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -28,9 +28,10 @@ interface MatchesListProps {
   matches: Match[];
   onEdit?: (match: Match) => void;
   onDelete?: (matchId: string) => void;
+  onEvaluate?: (matchId: string) => void;
 }
 
-export function MatchesList({ matches, onEdit, onDelete }: MatchesListProps) {
+export function MatchesList({ matches, onEdit, onDelete, onEvaluate }: MatchesListProps) {
   const handleEdit = (match: Match) => {
     if (onEdit) {
       onEdit(match);
@@ -51,7 +52,7 @@ export function MatchesList({ matches, onEdit, onDelete }: MatchesListProps) {
             <TableHead>Oponente</TableHead>
             <TableHead>Fecha</TableHead>
             <TableHead>Ubicación</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
+            <TableHead className="w-[150px]">Acciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -62,7 +63,15 @@ export function MatchesList({ matches, onEdit, onDelete }: MatchesListProps) {
                 {format(new Date(match.date), "PPP 'a las' p", { locale: es })}
               </TableCell>
               <TableCell>{match.location || "No especificada"}</TableCell>
-              <TableCell>
+              <TableCell className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEvaluate?.(match.id)}
+                >
+                  <ClipboardList className="h-4 w-4 mr-1" />
+                  Evaluar
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
