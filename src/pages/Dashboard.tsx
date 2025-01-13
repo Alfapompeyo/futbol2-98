@@ -150,7 +150,6 @@ export default function Dashboard() {
   };
 
   const handleEditMatch = async (match: any) => {
-    // Por ahora solo mostramos el modal de edición
     setSelectedMatch(match);
     setShowAddMatch(true);
   };
@@ -233,6 +232,51 @@ export default function Dashboard() {
     }
   };
 
+  const handleEditCategory = async (categoryId: string, newName: string) => {
+    const { error } = await supabase
+      .from("categories")
+      .update({ name: newName })
+      .eq("id", categoryId);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar la categoría",
+      });
+      return;
+    }
+
+    toast({
+      title: "Éxito",
+      description: "Categoría actualizada correctamente",
+    });
+    fetchCategories();
+  };
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    const { error } = await supabase
+      .from("categories")
+      .delete()
+      .eq("id", categoryId);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la categoría",
+      });
+      return;
+    }
+
+    toast({
+      title: "Éxito",
+      description: "Categoría eliminada correctamente",
+    });
+    setSelectedCategory(null);
+    fetchCategories();
+  };
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -284,52 +328,11 @@ export default function Dashboard() {
                 setActiveView("players");
                 fetchPlayers(category.id);
               }}
+              onEdit={(newName) => handleEditCategory(category.id, newName)}
+              onDelete={() => handleDeleteCategory(category.id)}
             />
           ))}
         </div>
-
-        {selectedCategory && (
-          <div className="mt-8">
-            <div className="flex gap-4 mb-4">
-              <button
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeView === "players"
-                    ? "bg-[#9333EA] text-white"
-                    : "text-gray-600 border border-gray-300"
-                } rounded-lg`}
-                onClick={() => setActiveView("players")}
-              >
-                Jugadores
-              </button>
-              <button
-                className={`px-4 py-2 text-sm font-medium ${
-                  activeView === "matches"
-                    ? "bg-[#9333EA] text-white"
-                    : "text-gray-600 border border-gray-300"
-                } rounded-lg`}
-                onClick={() => setActiveView("matches")}
-              >
-                Partidos
-              </button>
-            </div>
-
-            {activeView === "players" && players.length > 0 && (
-              <PlayersList 
-                players={players} 
-                onEdit={handleEditPlayer}
-                onDelete={handleDeletePlayer}
-              />
-            )}
-
-            {activeView === "matches" && matches.length > 0 && (
-              <MatchesList 
-                matches={matches}
-                onEdit={handleEditMatch}
-                onDelete={handleDeleteMatch}
-              />
-            )}
-          </div>
-        )}
 
         <AddCategoryModal
           isOpen={showAddCategory}
