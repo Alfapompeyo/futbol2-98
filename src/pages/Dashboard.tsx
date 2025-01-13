@@ -163,6 +163,160 @@ export default function Dashboard() {
     fetchCategories();
   };
 
+  const handleAddPlayer = async (playerData: any) => {
+    try {
+      const { error } = await supabase
+        .from("players")
+        .insert([{ ...playerData, category_id: selectedCategory }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Jugador añadido correctamente",
+      });
+
+      if (selectedCategory) {
+        fetchPlayers(selectedCategory);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo añadir el jugador",
+      });
+    }
+  };
+
+  const handleEditPlayer = async (playerData: any) => {
+    try {
+      const { error } = await supabase
+        .from("players")
+        .update(playerData)
+        .eq('id', playerData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Jugador actualizado correctamente",
+      });
+
+      if (selectedCategory) {
+        fetchPlayers(selectedCategory);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar el jugador",
+      });
+    }
+  };
+
+  const handleDeletePlayer = async (playerId: string) => {
+    try {
+      const { error } = await supabase
+        .from("players")
+        .delete()
+        .eq('id', playerId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Jugador eliminado correctamente",
+      });
+
+      if (selectedCategory) {
+        fetchPlayers(selectedCategory);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el jugador",
+      });
+    }
+  };
+
+  const handleAddMatch = async (matchData: any) => {
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .insert([{ ...matchData, category_id: selectedCategory }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Partido añadido correctamente",
+      });
+
+      if (selectedCategory) {
+        fetchMatches(selectedCategory);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo añadir el partido",
+      });
+    }
+  };
+
+  const handleEditMatch = async (matchData: any) => {
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .update(matchData)
+        .eq('id', matchData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Partido actualizado correctamente",
+      });
+
+      if (selectedCategory) {
+        fetchMatches(selectedCategory);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar el partido",
+      });
+    }
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    try {
+      const { error } = await supabase
+        .from("matches")
+        .delete()
+        .eq('id', matchId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Partido eliminado correctamente",
+      });
+
+      if (selectedCategory) {
+        fetchMatches(selectedCategory);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el partido",
+      });
+    }
+  };
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
