@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
@@ -23,8 +24,16 @@ interface EvaluationForm {
   yellowCards: number;
   redCards: number;
   goals: number;
+  goalTypes: string[];
   assists: number;
 }
+
+const goalTypeOptions = [
+  { value: "header", label: "De cabeza" },
+  { value: "penalty", label: "De penal" },
+  { value: "outside_box", label: "Fuera del área con pie" },
+  { value: "inside_box", label: "Dentro del área con pie" },
+];
 
 export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluationProps) {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -33,6 +42,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     yellowCards: 0,
     redCards: 0,
     goals: 0,
+    goalTypes: [],
     assists: 0,
   });
   const { toast } = useToast();
@@ -55,6 +65,9 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
   const handleSubmitEvaluation = async () => {
     if (!selectedPlayer) return;
 
+    // Convert goalTypes to the format expected by the database
+    const formattedGoalTypes = evaluation.goalTypes.map(type => ({ type }));
+
     const { error } = await supabase.from("match_statistics").insert([
       {
         match_id: matchId,
@@ -62,6 +75,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         yellow_cards: evaluation.yellowCards,
         red_cards: evaluation.redCards,
         goals: evaluation.goals,
+        goal_types: formattedGoalTypes,
         assists: evaluation.assists,
       },
     ]);
@@ -85,8 +99,18 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       yellowCards: 0,
       redCards: 0,
       goals: 0,
+      goalTypes: [],
       assists: 0,
     });
+  };
+
+  const handleAddGoalType = (type: string) => {
+    if (evaluation.goalTypes.length < evaluation.goals) {
+      setEvaluation({
+        ...evaluation,
+        goalTypes: [...evaluation.goalTypes, type],
+      });
+    }
   };
 
   const getPositionLabel = (value: string) => {
@@ -206,11 +230,45 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                   type="number"
                   min="0"
                   value={evaluation.goals}
-                  onChange={(e) => setEvaluation({
-                    ...evaluation,
-                    goals: parseInt(e.target.value) || 0
-                  })}
+                  onChange={(e) => {
+                    const newGoals = parseInt(e.target.value) || 0;
+                    setEvaluation({
+                      ...evaluation,
+                      goals: newGoals,
+                      goalTypes: evaluation.goalTypes.slice(0, newGoals)
+                    });
+                  }}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de Gol ({evaluation.goalTypes.length} de {evaluation.goals})
+                </label>
+                <Select
+                  disabled={evaluation.goalTypes.length >= evaluation.goals}
+                  onValueChange={handleAddGoalType}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {goalTypeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {evaluation.goalTypes.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {evaluation.goalTypes.map((type, index) => (
+                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100">
+                        {goalTypeOptions.find(opt => opt.value === type)?.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               
               <div>
