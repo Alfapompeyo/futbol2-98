@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     goalTypes: [],
     assists: 0,
   });
+  const [existingEvaluation, setExistingEvaluation] = useState<any>(null);
   const { toast } = useToast();
 
   const fetchPlayers = async () => {
@@ -58,27 +59,67 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     }
   };
 
-  useState(() => {
+  const fetchExistingEvaluation = async (playerId: string) => {
+    const { data, error } = await supabase
+      .from("match_statistics")
+      .select("*")
+      .eq("match_id", matchId)
+      .eq("player_id", playerId)
+      .maybeSingle();
+
+    if (!error && data) {
+      setExistingEvaluation(data);
+      setEvaluation({
+        yellowCards: data.yellow_cards || 0,
+        redCards: data.red_cards || 0,
+        goals: data.goals || 0,
+        goalTypes: data.goal_types?.map((gt: any) => gt.type) || [],
+        assists: data.assists || 0,
+      });
+    }
+  };
+
+  useEffect(() => {
     fetchPlayers();
   }, [categoryId]);
+
+  useEffect(() => {
+    if (selectedPlayer) {
+      fetchExistingEvaluation(selectedPlayer.id);
+    }
+  }, [selectedPlayer]);
 
   const handleSubmitEvaluation = async () => {
     if (!selectedPlayer) return;
 
-    // Convert goalTypes to the format expected by the database
     const formattedGoalTypes = evaluation.goalTypes.map(type => ({ type }));
 
-    const { error } = await supabase.from("match_statistics").insert([
-      {
-        match_id: matchId,
-        player_id: selectedPlayer.id,
-        yellow_cards: evaluation.yellowCards,
-        red_cards: evaluation.redCards,
-        goals: evaluation.goals,
-        goal_types: formattedGoalTypes,
-        assists: evaluation.assists,
-      },
-    ]);
+    const evaluationData = {
+      match_id: matchId,
+      player_id: selectedPlayer.id,
+      yellow_cards: evaluation.yellowCards,
+      red_cards: evaluation.redCards,
+      goals: evaluation.goals,
+      goal_types: formattedGoalTypes,
+      assists: evaluation.assists,
+    };
+
+    let error;
+
+    if (existingEvaluation) {
+      // Update existing evaluation
+      const response = await supabase
+        .from("match_statistics")
+        .update(evaluationData)
+        .eq("id", existingEvaluation.id);
+      error = response.error;
+    } else {
+      // Insert new evaluation
+      const response = await supabase
+        .from("match_statistics")
+        .insert([evaluationData]);
+      error = response.error;
+    }
 
     if (error) {
       toast({
@@ -91,7 +132,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
 
     toast({
       title: "Éxito",
-      description: "Evaluación guardada correctamente",
+      description: `Evaluación ${existingEvaluation ? 'actualizada' : 'guardada'} correctamente`,
     });
 
     setSelectedPlayer(null);
@@ -102,6 +143,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       goalTypes: [],
       assists: 0,
     });
+    setExistingEvaluation(null);
   };
 
   const handleAddGoalType = (type: string) => {
@@ -170,7 +212,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                       size="sm"
                       onClick={() => setSelectedPlayer(player)}
                     >
-                      Evaluar
+                      {existingEvaluation ? 'Editar' : 'Evaluar'}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -181,11 +223,21 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
           <div className="bg-gray-50 p-6 rounded-lg">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
-                Evaluación para {selectedPlayer.name}
+                {existingEvaluation ? 'Editar evaluación de' : 'Nueva evaluación para'} {selectedPlayer.name}
               </h3>
               <Button
                 variant="ghost"
-                onClick={() => setSelectedPlayer(null)}
+                onClick={() => {
+                  setSelectedPlayer(null);
+                  setExistingEvaluation(null);
+                  setEvaluation({
+                    yellowCards: 0,
+                    redCards: 0,
+                    goals: 0,
+                    goalTypes: [],
+                    assists: 0,
+                  });
+                }}
               >
                 Volver a la lista
               </Button>
@@ -291,7 +343,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
               onClick={handleSubmitEvaluation}
               className="w-full bg-[#0F172A] hover:bg-[#1E293B]"
             >
-              Guardar Evaluación
+              {existingEvaluation ? 'Actualizar' : 'Guardar'} Evaluación
             </Button>
           </div>
         )}
