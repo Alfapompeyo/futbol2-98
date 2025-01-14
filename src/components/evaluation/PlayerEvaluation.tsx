@@ -46,6 +46,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     assists: 0,
   });
   const [existingEvaluation, setExistingEvaluation] = useState<any>(null);
+  const [evaluations, setEvaluations] = useState<{[key: string]: any}>({});
   const { toast } = useToast();
 
   const fetchPlayers = async () => {
@@ -56,6 +57,23 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
 
     if (!error && data) {
       setPlayers(data);
+      // Fetch evaluations for all players
+      fetchAllEvaluations(data);
+    }
+  };
+
+  const fetchAllEvaluations = async (players: Player[]) => {
+    const { data, error } = await supabase
+      .from("match_statistics")
+      .select("*")
+      .eq("match_id", matchId);
+
+    if (!error && data) {
+      const evaluationsMap = data.reduce((acc: {[key: string]: any}, evaluation) => {
+        acc[evaluation.player_id] = evaluation;
+        return acc;
+      }, {});
+      setEvaluations(evaluationsMap);
     }
   };
 
@@ -75,6 +93,15 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         goals: data.goals || 0,
         goalTypes: data.goal_types?.map((gt: any) => gt.type) || [],
         assists: data.assists || 0,
+      });
+    } else {
+      setExistingEvaluation(null);
+      setEvaluation({
+        yellowCards: 0,
+        redCards: 0,
+        goals: 0,
+        goalTypes: [],
+        assists: 0,
       });
     }
   };
@@ -107,14 +134,12 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     let error;
 
     if (existingEvaluation) {
-      // Update existing evaluation
       const response = await supabase
         .from("match_statistics")
         .update(evaluationData)
         .eq("id", existingEvaluation.id);
       error = response.error;
     } else {
-      // Insert new evaluation
       const response = await supabase
         .from("match_statistics")
         .insert([evaluationData]);
@@ -135,6 +160,9 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       description: `Evaluación ${existingEvaluation ? 'actualizada' : 'guardada'} correctamente`,
     });
 
+    // Refresh the evaluations list
+    fetchPlayers();
+    
     setSelectedPlayer(null);
     setEvaluation({
       yellowCards: 0,
@@ -171,6 +199,16 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     return positions[value as keyof typeof positions] || value;
   };
 
+  const getEvaluationSummary = (evaluation: any) => {
+    if (!evaluation) return "Sin evaluar";
+    const summary = [];
+    if (evaluation.goals > 0) summary.push(`${evaluation.goals} goles`);
+    if (evaluation.assists > 0) summary.push(`${evaluation.assists} asistencias`);
+    if (evaluation.yellow_cards > 0) summary.push(`${evaluation.yellow_cards} T.A.`);
+    if (evaluation.red_cards > 0) summary.push(`${evaluation.red_cards} T.R.`);
+    return summary.length > 0 ? summary.join(", ") : "Evaluado";
+  };
+
   return (
     <div className="h-screen bg-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -190,6 +228,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                 <TableHead className="w-[50px]"></TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Posición</TableHead>
+                <TableHead>Estado</TableHead>
                 <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -207,12 +246,17 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                     {player.position ? getPositionLabel(player.position) : ''}
                   </TableCell>
                   <TableCell>
+                    <span className={`text-sm ${evaluations[player.id] ? 'text-green-600' : 'text-gray-500'}`}>
+                      {getEvaluationSummary(evaluations[player.id])}
+                    </span>
+                  </TableCell>
+                  <TableCell>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedPlayer(player)}
                     >
-                      {existingEvaluation ? 'Editar' : 'Evaluar'}
+                      {evaluations[player.id] ? 'Editar' : 'Evaluar'}
                     </Button>
                   </TableCell>
                 </TableRow>
