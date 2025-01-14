@@ -57,7 +57,6 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
 
     if (!error && data) {
       setPlayers(data);
-      // Fetch evaluations for all players
       fetchAllEvaluations(data);
     }
   };
@@ -160,7 +159,6 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       description: `Evaluación ${existingEvaluation ? 'actualizada' : 'guardada'} correctamente`,
     });
 
-    // Refresh the evaluations list
     fetchPlayers();
     
     setSelectedPlayer(null);
@@ -199,16 +197,6 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     return positions[value as keyof typeof positions] || value;
   };
 
-  const getEvaluationSummary = (evaluation: any) => {
-    if (!evaluation) return "Sin evaluar";
-    const summary = [];
-    if (evaluation.goals > 0) summary.push(`${evaluation.goals} goles`);
-    if (evaluation.assists > 0) summary.push(`${evaluation.assists} asistencias`);
-    if (evaluation.yellow_cards > 0) summary.push(`${evaluation.yellow_cards} T.A.`);
-    if (evaluation.red_cards > 0) summary.push(`${evaluation.red_cards} T.R.`);
-    return summary.length > 0 ? summary.join(", ") : "Evaluado";
-  };
-
   return (
     <div className="h-screen bg-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -228,13 +216,12 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                 <TableHead className="w-[50px]"></TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Posición</TableHead>
-                <TableHead>Estado</TableHead>
                 <TableHead className="w-[100px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {players.map((player) => (
-                <TableRow key={player.id}>
+                <TableRow key={player.id} className="bg-[#D3E4FD] text-white">
                   <TableCell>
                     <Avatar>
                       <AvatarImage src={player.image_url} alt={player.name} />
@@ -246,15 +233,11 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                     {player.position ? getPositionLabel(player.position) : ''}
                   </TableCell>
                   <TableCell>
-                    <span className={`text-sm ${evaluations[player.id] ? 'text-green-600' : 'text-gray-500'}`}>
-                      {getEvaluationSummary(evaluations[player.id])}
-                    </span>
-                  </TableCell>
-                  <TableCell>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedPlayer(player)}
+                      className="bg-white text-black hover:bg-gray-100"
                     >
                       {evaluations[player.id] ? 'Editar' : 'Evaluar'}
                     </Button>
