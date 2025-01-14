@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface Player {
   id: string;
   name: string;
   position?: string;
+  image_url?: string;
 }
 
 interface PlayerEvaluationProps {
@@ -25,10 +27,8 @@ interface EvaluationForm {
 }
 
 export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluationProps) {
-  const [searchQuery, setSearchQuery] = useState("");
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
   const [evaluation, setEvaluation] = useState<EvaluationForm>({
     yellowCards: 0,
     redCards: 0,
@@ -38,28 +38,19 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
   const { toast } = useToast();
 
   const fetchPlayers = async () => {
-    let query = supabase
+    const { data, error } = await supabase
       .from("players")
-      .select("id, name, position")
+      .select("id, name, position, image_url")
       .eq("category_id", categoryId);
-    
-    if (searchQuery) {
-      query = query.ilike("name", `%${searchQuery}%`);
-    }
-
-    const { data, error } = await query;
 
     if (!error && data) {
       setPlayers(data);
-      setShowDropdown(true);
     }
   };
 
-  const handlePlayerSelect = (player: Player) => {
-    setSelectedPlayer(player);
-    setSearchQuery(player.name);
-    setShowDropdown(false);
-  };
+  useState(() => {
+    fetchPlayers();
+  }, [categoryId]);
 
   const handleSubmitEvaluation = async () => {
     if (!selectedPlayer) return;
@@ -89,15 +80,29 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       description: "Evaluación guardada correctamente",
     });
 
-    // Reset form
     setSelectedPlayer(null);
-    setSearchQuery("");
     setEvaluation({
       yellowCards: 0,
       redCards: 0,
       goals: 0,
       assists: 0,
     });
+  };
+
+  const getPositionLabel = (value: string) => {
+    const positions = {
+      portero: "Portero",
+      defensa_central: "Defensa Central",
+      lateral_izquierdo: "Lateral Izquierdo",
+      lateral_derecho: "Lateral Derecho",
+      mediocampista_ofensivo: "Mediocampista Ofensivo",
+      mediocampista_defensivo: "Mediocampista Defensivo",
+      mediocampista_mixto: "Mediocampista Mixto",
+      delantero_centro: "Delantero Centro",
+      extremo_izquierdo: "Extremo Izquierdo",
+      extremo_derecho: "Extremo Derecho",
+    };
+    return positions[value as keyof typeof positions] || value;
   };
 
   return (
@@ -111,46 +116,56 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         </button>
         
         <h2 className="text-2xl font-bold mb-6">Evaluación de Jugadores</h2>
-        
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            type="text"
-            placeholder="Buscar jugadores..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              fetchPlayers();
-            }}
-            onFocus={() => {
-              fetchPlayers();
-            }}
-            className="pl-10"
-          />
-          
-          {showDropdown && players.length > 0 && (
-            <div className="absolute w-full mt-1 bg-white border rounded-md shadow-lg z-10 max-h-60 overflow-y-auto">
-              {players.map((player) => (
-                <div
-                  key={player.id}
-                  className="p-3 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => handlePlayerSelect(player)}
-                >
-                  <div className="font-medium">{player.name}</div>
-                  {player.position && (
-                    <div className="text-sm text-gray-500">{player.position}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {selectedPlayer && (
+        {!selectedPlayer ? (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[50px]"></TableHead>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Posición</TableHead>
+                <TableHead className="w-[100px]"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {players.map((player) => (
+                <TableRow key={player.id}>
+                  <TableCell>
+                    <Avatar>
+                      <AvatarImage src={player.image_url} alt={player.name} />
+                      <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </TableCell>
+                  <TableCell>{player.name}</TableCell>
+                  <TableCell>
+                    {player.position ? getPositionLabel(player.position) : ''}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedPlayer(player)}
+                    >
+                      Evaluar
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        ) : (
           <div className="bg-gray-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4">
-              Evaluación para {selectedPlayer.name}
-            </h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">
+                Evaluación para {selectedPlayer.name}
+              </h3>
+              <Button
+                variant="ghost"
+                onClick={() => setSelectedPlayer(null)}
+              >
+                Volver a la lista
+              </Button>
+            </div>
             
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
