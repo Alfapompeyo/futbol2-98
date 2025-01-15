@@ -1,7 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Player {
   id: string;
@@ -28,6 +31,9 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
   const [formation, setFormation] = useState("4-3-3");
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
+  const [customFormation, setCustomFormation] = useState("");
+  const [isCustom, setIsCustom] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -41,8 +47,34 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
       }
     };
 
+    const fetchExistingLineup = async () => {
+      const { data, error } = await supabase
+        .from("match_lineups")
+        .select("*")
+        .eq("match_id", matchId)
+        .single();
+
+      if (!error && data) {
+        setFormation(data.formation);
+        setSelectedPlayers(data.positions);
+      }
+    };
+
     fetchPlayers();
-  }, [categoryId]);
+    fetchExistingLineup();
+  }, [categoryId, matchId]);
+
+  const validateCustomFormation = (value: string) => {
+    const pattern = /^\d+-\d+-\d+$/;
+    return pattern.test(value);
+  };
+
+  const handleCustomFormationChange = (value: string) => {
+    setCustomFormation(value);
+    if (validateCustomFormation(value)) {
+      setFormation(value);
+    }
+  };
 
   const getPositionsFromFormation = (formation: string) => {
     const positions: { top: string; left: string; position: string }[] = [];
@@ -88,6 +120,30 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
     }));
   };
 
+  const handleSaveLineup = async () => {
+    const { error } = await supabase
+      .from("match_lineups")
+      .upsert({
+        match_id: matchId,
+        formation: formation,
+        positions: selectedPlayers,
+      });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la alineación",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Éxito",
+        description: "Alineación guardada correctamente",
+      });
+      onClose();
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
@@ -95,19 +151,40 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
           <DialogTitle>Alineación del Equipo</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <Select value={formation} onValueChange={setFormation}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Selecciona formación" />
-              </SelectTrigger>
-              <SelectContent>
-                {formations.map((f) => (
-                  <SelectItem key={f.value} value={f.value}>
-                    {f.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex justify-between items-center gap-4">
+            {!isCustom ? (
+              <Select value={formation} onValueChange={setFormation}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecciona formación" />
+                </SelectTrigger>
+                <SelectContent>
+                  {formations.map((f) => (
+                    <SelectItem key={f.value} value={f.value}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="custom">Formación personalizada</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex gap-2 items-center">
+                <Input
+                  placeholder="Ej: 4-3-3"
+                  value={customFormation}
+                  onChange={(e) => handleCustomFormationChange(e.target.value)}
+                  className="w-[180px]"
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCustom(false)}
+                >
+                  Volver
+                </Button>
+              </div>
+            )}
+            <Button onClick={handleSaveLineup}>
+              Guardar Alineación
+            </Button>
           </div>
 
           <div className="relative w-full h-[600px] bg-green-600 rounded-lg overflow-hidden">
