@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Player {
   id: string;
@@ -26,6 +27,11 @@ interface EvaluationForm {
   goals: number;
   goalTypes: string[];
   assists: number;
+  minutesPlayed: number;
+  saves: number;
+  crosses: number;
+  rating: number;
+  comments: string;
 }
 
 interface PlayerEvaluation {
@@ -35,6 +41,11 @@ interface PlayerEvaluation {
   goals: number;
   goal_types: { type: string }[];
   assists: number;
+  minutes_played: number;
+  saves: number;
+  crosses: number;
+  rating: number;
+  comments: string;
   player_id: string;
 }
 
@@ -54,6 +65,11 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     goals: 0,
     goalTypes: [],
     assists: 0,
+    minutesPlayed: 0,
+    saves: 0,
+    crosses: 0,
+    rating: 1,
+    comments: "",
   });
   const [evaluations, setEvaluations] = useState<Record<string, PlayerEvaluation>>({});
   const { toast } = useToast();
@@ -103,19 +119,22 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       goals: evaluation.goals,
       goal_types: formattedGoalTypes,
       assists: evaluation.assists,
+      minutes_played: evaluation.minutesPlayed,
+      saves: evaluation.saves,
+      crosses: evaluation.crosses,
+      rating: evaluation.rating,
+      comments: evaluation.comments,
     };
 
     let error;
 
     if (existingEvaluation) {
-      // Update existing evaluation
       const { error: updateError } = await supabase
         .from("match_statistics")
         .update(evaluationData)
         .eq('id', existingEvaluation.id);
       error = updateError;
     } else {
-      // Create new evaluation
       const { error: insertError } = await supabase
         .from("match_statistics")
         .insert([evaluationData]);
@@ -144,16 +163,12 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       goals: 0,
       goalTypes: [],
       assists: 0,
+      minutesPlayed: 0,
+      saves: 0,
+      crosses: 0,
+      rating: 1,
+      comments: "",
     });
-  };
-
-  const handleAddGoalType = (type: string) => {
-    if (evaluation.goalTypes.length < evaluation.goals) {
-      setEvaluation({
-        ...evaluation,
-        goalTypes: [...evaluation.goalTypes, type],
-      });
-    }
   };
 
   const handleSelectPlayer = (player: Player) => {
@@ -167,6 +182,11 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         goals: existingEvaluation.goals || 0,
         goalTypes: existingEvaluation.goal_types?.map(gt => gt.type) || [],
         assists: existingEvaluation.assists || 0,
+        minutesPlayed: existingEvaluation.minutes_played || 0,
+        saves: existingEvaluation.saves || 0,
+        crosses: existingEvaluation.crosses || 0,
+        rating: existingEvaluation.rating || 1,
+        comments: existingEvaluation.comments || "",
       });
     } else {
       setEvaluation({
@@ -175,6 +195,11 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         goals: 0,
         goalTypes: [],
         assists: 0,
+        minutesPlayed: 0,
+        saves: 0,
+        crosses: 0,
+        rating: 1,
+        comments: "",
       });
     }
   };
@@ -259,6 +284,22 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
             </div>
             
             <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Minutos Jugados
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="90"
+                  value={evaluation.minutesPlayed}
+                  onChange={(e) => setEvaluation({
+                    ...evaluation,
+                    minutesPlayed: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tarjetas Amarillas
@@ -352,6 +393,70 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                   })}
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Atajadas
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={evaluation.saves}
+                  onChange={(e) => setEvaluation({
+                    ...evaluation,
+                    saves: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Centros
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={evaluation.crosses}
+                  onChange={(e) => setEvaluation({
+                    ...evaluation,
+                    crosses: parseInt(e.target.value) || 0
+                  })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Calificación (1-7)
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="7"
+                  value={evaluation.rating}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value) || 1;
+                    setEvaluation({
+                      ...evaluation,
+                      rating: Math.min(Math.max(value, 1), 7)
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Comentarios
+              </label>
+              <Textarea
+                value={evaluation.comments}
+                onChange={(e) => setEvaluation({
+                  ...evaluation,
+                  comments: e.target.value
+                })}
+                placeholder="Ingrese comentarios sobre el desempeño del jugador..."
+                className="min-h-[100px]"
+              />
             </div>
             
             <Button 

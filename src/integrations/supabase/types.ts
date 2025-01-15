@@ -30,6 +30,7 @@ export type Database = {
       match_statistics: {
         Row: {
           assists: number | null
+          comments: string | null
           created_at: string
           crosses: number | null
           goal_types: Json[] | null
@@ -38,11 +39,14 @@ export type Database = {
           match_id: string
           minutes_played: number | null
           player_id: string
+          rating: number | null
           red_cards: number | null
+          saves: number | null
           yellow_cards: number | null
         }
         Insert: {
           assists?: number | null
+          comments?: string | null
           created_at?: string
           crosses?: number | null
           goal_types?: Json[] | null
@@ -51,11 +55,14 @@ export type Database = {
           match_id: string
           minutes_played?: number | null
           player_id: string
+          rating?: number | null
           red_cards?: number | null
+          saves?: number | null
           yellow_cards?: number | null
         }
         Update: {
           assists?: number | null
+          comments?: string | null
           created_at?: string
           crosses?: number | null
           goal_types?: Json[] | null
@@ -64,7 +71,9 @@ export type Database = {
           match_id?: string
           minutes_played?: number | null
           player_id?: string
+          rating?: number | null
           red_cards?: number | null
+          saves?: number | null
           yellow_cards?: number | null
         }
         Relationships: [
