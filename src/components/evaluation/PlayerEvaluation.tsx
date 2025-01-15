@@ -94,7 +94,10 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     if (!error && data) {
       const evaluationsMap: Record<string, PlayerEvaluation> = {};
       data.forEach((evaluation) => {
-        evaluationsMap[evaluation.player_id] = evaluation;
+        evaluationsMap[evaluation.player_id] = {
+          ...evaluation,
+          goal_types: evaluation.goal_types?.map((gt: any) => ({ type: gt.type })) || []
+        };
       });
       setEvaluations(evaluationsMap);
     }
@@ -104,6 +107,15 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     fetchPlayers();
     fetchEvaluations();
   }, [categoryId, matchId]);
+
+  const handleAddGoalType = (value: string) => {
+    if (evaluation.goalTypes.length < evaluation.goals) {
+      setEvaluation({
+        ...evaluation,
+        goalTypes: [...evaluation.goalTypes, value]
+      });
+    }
+  };
 
   const handleSubmitEvaluation = async () => {
     if (!selectedPlayer) return;
