@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,16 @@ interface EvaluationForm {
   assists: number;
 }
 
+interface PlayerEvaluation {
+  id: string;
+  yellow_cards: number;
+  red_cards: number;
+  goals: number;
+  goal_types: { type: string }[];
+  assists: number;
+  player_id: string;
+}
+
 const goalTypeOptions = [
   { value: "header", label: "De cabeza" },
   { value: "penalty", label: "De penal" },
@@ -45,6 +55,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     goalTypes: [],
     assists: 0,
   });
+  const [evaluations, setEvaluations] = useState<Record<string, PlayerEvaluation>>({});
   const { toast } = useToast();
 
   const fetchPlayers = async () => {
@@ -58,27 +69,58 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     }
   };
 
-  useState(() => {
+  const fetchEvaluations = async () => {
+    const { data, error } = await supabase
+      .from("match_statistics")
+      .select("*")
+      .eq("match_id", matchId);
+
+    if (!error && data) {
+      const evaluationsMap: Record<string, PlayerEvaluation> = {};
+      data.forEach((evaluation) => {
+        evaluationsMap[evaluation.player_id] = evaluation;
+      });
+      setEvaluations(evaluationsMap);
+    }
+  };
+
+  useEffect(() => {
     fetchPlayers();
-  }, [categoryId]);
+    fetchEvaluations();
+  }, [categoryId, matchId]);
 
   const handleSubmitEvaluation = async () => {
     if (!selectedPlayer) return;
 
-    // Convert goalTypes to the format expected by the database
     const formattedGoalTypes = evaluation.goalTypes.map(type => ({ type }));
+    const existingEvaluation = evaluations[selectedPlayer.id];
 
-    const { error } = await supabase.from("match_statistics").insert([
-      {
-        match_id: matchId,
-        player_id: selectedPlayer.id,
-        yellow_cards: evaluation.yellowCards,
-        red_cards: evaluation.redCards,
-        goals: evaluation.goals,
-        goal_types: formattedGoalTypes,
-        assists: evaluation.assists,
-      },
-    ]);
+    const evaluationData = {
+      match_id: matchId,
+      player_id: selectedPlayer.id,
+      yellow_cards: evaluation.yellowCards,
+      red_cards: evaluation.redCards,
+      goals: evaluation.goals,
+      goal_types: formattedGoalTypes,
+      assists: evaluation.assists,
+    };
+
+    let error;
+
+    if (existingEvaluation) {
+      // Update existing evaluation
+      const { error: updateError } = await supabase
+        .from("match_statistics")
+        .update(evaluationData)
+        .eq('id', existingEvaluation.id);
+      error = updateError;
+    } else {
+      // Create new evaluation
+      const { error: insertError } = await supabase
+        .from("match_statistics")
+        .insert([evaluationData]);
+      error = insertError;
+    }
 
     if (error) {
       toast({
@@ -94,6 +136,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       description: "Evaluación guardada correctamente",
     });
 
+    fetchEvaluations();
     setSelectedPlayer(null);
     setEvaluation({
       yellowCards: 0,
@@ -109,6 +152,29 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       setEvaluation({
         ...evaluation,
         goalTypes: [...evaluation.goalTypes, type],
+      });
+    }
+  };
+
+  const handleSelectPlayer = (player: Player) => {
+    setSelectedPlayer(player);
+    const existingEvaluation = evaluations[player.id];
+    
+    if (existingEvaluation) {
+      setEvaluation({
+        yellowCards: existingEvaluation.yellow_cards || 0,
+        redCards: existingEvaluation.red_cards || 0,
+        goals: existingEvaluation.goals || 0,
+        goalTypes: existingEvaluation.goal_types?.map(gt => gt.type) || [],
+        assists: existingEvaluation.assists || 0,
+      });
+    } else {
+      setEvaluation({
+        yellowCards: 0,
+        redCards: 0,
+        goals: 0,
+        goalTypes: [],
+        assists: 0,
       });
     }
   };
@@ -168,9 +234,9 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedPlayer(player)}
+                      onClick={() => handleSelectPlayer(player)}
                     >
-                      Evaluar
+                      {evaluations[player.id] ? 'Editar' : 'Evaluar'}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -181,7 +247,8 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
           <div className="bg-gray-50 p-6 rounded-lg">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">
-                Evaluación para {selectedPlayer.name}
+                {evaluations[selectedPlayer.id] ? 'Editar evaluación de ' : 'Nueva evaluación para '} 
+                {selectedPlayer.name}
               </h3>
               <Button
                 variant="ghost"
@@ -291,7 +358,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
               onClick={handleSubmitEvaluation}
               className="w-full bg-[#0F172A] hover:bg-[#1E293B]"
             >
-              Guardar Evaluación
+              {evaluations[selectedPlayer.id] ? 'Actualizar' : 'Guardar'} Evaluación
             </Button>
           </div>
         )}
