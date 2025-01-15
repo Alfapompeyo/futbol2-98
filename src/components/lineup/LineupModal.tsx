@@ -130,6 +130,8 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
         match_id: matchId,
         formation: formation,
         positions: selectedPlayers,
+      }, {
+        onConflict: 'match_id'
       });
 
     if (error) {
