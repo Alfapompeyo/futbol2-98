@@ -56,7 +56,10 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
 
       if (!error && data) {
         setFormation(data.formation);
-        setSelectedPlayers(data.positions);
+        // Ensure the positions data is treated as Record<string, string>
+        if (typeof data.positions === 'object' && data.positions !== null) {
+          setSelectedPlayers(data.positions as Record<string, string>);
+        }
       }
     };
 
@@ -153,7 +156,13 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
         <div className="space-y-4">
           <div className="flex justify-between items-center gap-4">
             {!isCustom ? (
-              <Select value={formation} onValueChange={setFormation}>
+              <Select value={formation} onValueChange={(value) => {
+                if (value === "custom") {
+                  setIsCustom(true);
+                } else {
+                  setFormation(value);
+                }
+              }}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Selecciona formación" />
                 </SelectTrigger>
