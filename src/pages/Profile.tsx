@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -14,7 +14,6 @@ interface UserProfile {
 
 export default function Profile() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -48,60 +47,48 @@ export default function Profile() {
   }, [toast]);
 
   return (
-    <div className="min-h-screen bg-[#E8F1FF] p-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="flex justify-center mb-8">
-          <img 
-            src="/lovable-uploads/0893c2ac-1331-47e8-b8c6-504c49064b2f.png" 
-            alt="Logo" 
-            className="w-24 h-24"
-          />
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1 p-8 bg-[#E8F1FF]">
+        <h1 className="text-2xl font-bold mb-8">Mi Perfil</h1>
+        <div className="max-w-2xl mx-auto">
+          <Card>
+            <CardHeader className="text-2xl font-bold text-center">
+              Información Personal
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-500">Nombre</p>
+                <p className="text-lg">{profile?.nombre || 'No especificado'}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-500">Apellido Paterno</p>
+                <p className="text-lg">{profile?.apellido1 || 'No especificado'}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-500">Apellido Materno</p>
+                <p className="text-lg">{profile?.apellido2 || 'No especificado'}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-500">Usuario</p>
+                <p className="text-lg">{profile?.usuario || 'No especificado'}</p>
+              </div>
+              <div className="pt-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => toast({
+                    title: "Próximamente",
+                    description: "La función de editar contraseña estará disponible pronto",
+                  })}
+                >
+                  Editar Contraseña
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        
-        <Card>
-          <CardHeader className="text-2xl font-bold text-center">
-            Mi Perfil
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Nombre</p>
-              <p className="text-lg">{profile?.nombre || 'No especificado'}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Apellido Paterno</p>
-              <p className="text-lg">{profile?.apellido1 || 'No especificado'}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Apellido Materno</p>
-              <p className="text-lg">{profile?.apellido2 || 'No especificado'}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">Usuario</p>
-              <p className="text-lg">{profile?.usuario || 'No especificado'}</p>
-            </div>
-            <div className="pt-4">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => toast({
-                  title: "Próximamente",
-                  description: "La función de editar contraseña estará disponible pronto",
-                })}
-              >
-                Editar Contraseña
-              </Button>
-            </div>
-            <div className="pt-4">
-              <Button 
-                className="w-full bg-[#0F172A] hover:bg-[#1E293B]"
-                onClick={() => navigate('/dashboard')}
-              >
-                Ir a Fútbol
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      </main>
     </div>
   );
 }
