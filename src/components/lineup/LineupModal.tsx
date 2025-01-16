@@ -56,7 +56,6 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
 
       if (!error && data) {
         setFormation(data.formation);
-        // Ensure the positions data is treated as Record<string, string>
         if (typeof data.positions === 'object' && data.positions !== null) {
           setSelectedPlayers(data.positions as Record<string, string>);
         }
@@ -68,8 +67,13 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
   }, [categoryId, matchId]);
 
   const validateCustomFormation = (value: string) => {
-    const pattern = /^\d+-\d+-\d+$/;
-    return pattern.test(value);
+    // Actualizado para aceptar formaciones de 3 o 4 números
+    const pattern = /^\d+-\d+-\d+(-\d+)?$/;
+    if (!pattern.test(value)) return false;
+    
+    const numbers = value.split('-').map(Number);
+    const sum = numbers.reduce((a, b) => a + b, 0);
+    return sum === 10; // 10 jugadores de campo (sin contar el portero)
   };
 
   const handleCustomFormationChange = (value: string) => {
@@ -81,36 +85,42 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
 
   const getPositionsFromFormation = (formation: string) => {
     const positions: { top: string; left: string; position: string }[] = [];
-    const [defenders, midfielders, forwards] = formation.split("-").map(Number);
+    const numbers = formation.split("-").map(Number);
 
-    // Goalkeeper
+    // Portero
     positions.push({ top: "85%", left: "50%", position: "GK" });
 
-    // Defenders
-    for (let i = 0; i < defenders; i++) {
-      positions.push({
-        top: "70%",
-        left: `${(100 / (defenders + 1)) * (i + 1)}%`,
-        position: `DEF${i + 1}`,
-      });
-    }
+    let currentTop = 70;
+    const spacing = 15;
 
-    // Midfielders
-    for (let i = 0; i < midfielders; i++) {
-      positions.push({
-        top: "45%",
-        left: `${(100 / (midfielders + 1)) * (i + 1)}%`,
-        position: `MID${i + 1}`,
-      });
-    }
+    // Función auxiliar para distribuir jugadores en una línea
+    const distributePlayersInLine = (count: number, top: number, prefix: string) => {
+      for (let i = 0; i < count; i++) {
+        positions.push({
+          top: `${top}%`,
+          left: `${(100 / (count + 1)) * (i + 1)}%`,
+          position: `${prefix}${i + 1}`,
+        });
+      }
+    };
 
-    // Forwards
-    for (let i = 0; i < forwards; i++) {
-      positions.push({
-        top: "20%",
-        left: `${(100 / (forwards + 1)) * (i + 1)}%`,
-        position: `FWD${i + 1}`,
-      });
+    // Defensas
+    distributePlayersInLine(numbers[0], 70, "DEF");
+
+    // Distribuir el resto de líneas según la cantidad de números en la formación
+    if (numbers.length === 3) {
+      // Formación tradicional (ej: 4-3-3)
+      distributePlayersInLine(numbers[1], 45, "MID");
+      distributePlayersInLine(numbers[2], 20, "FWD");
+    } else if (numbers.length === 4) {
+      // Formación con 4 líneas (ej: 4-2-3-1)
+      const midTop1 = 55;
+      const midTop2 = 40;
+      const fwdTop = 20;
+
+      distributePlayersInLine(numbers[1], midTop1, "DMF");
+      distributePlayersInLine(numbers[2], midTop2, "AMF");
+      distributePlayersInLine(numbers[3], fwdTop, "FWD");
     }
 
     return positions;
@@ -180,7 +190,7 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
             ) : (
               <div className="flex gap-2 items-center">
                 <Input
-                  placeholder="Ej: 4-3-3"
+                  placeholder="Ej: 4-3-3 o 4-2-3-1"
                   value={customFormation}
                   onChange={(e) => handleCustomFormationChange(e.target.value)}
                   className="w-[180px]"
@@ -201,9 +211,10 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
           <div className="relative w-full h-[600px] bg-green-600 rounded-lg overflow-hidden">
             {/* Campo de fútbol */}
             <div className="absolute inset-0 border-2 border-white">
-              {/* Área grande */}
-              <div className="absolute top-[75%] left-[20%] right-[20%] h-[20%] border-2 border-white" />
-              <div className="absolute top-[0%] left-[20%] right-[20%] h-[20%] border-2 border-white" />
+              {/* Área grande inferior */}
+              <div className="absolute bottom-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
+              {/* Área grande superior */}
+              <div className="absolute top-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
               {/* Círculo central */}
               <div className="absolute top-[45%] left-[45%] w-[10%] h-[10%] border-2 border-white rounded-full" />
               {/* Línea media */}
