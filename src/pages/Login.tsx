@@ -14,7 +14,6 @@ export default function Login() {
     e.preventDefault();
     
     try {
-      // Save email and password to the database
       const { error } = await supabase
         .from('user_emails')
         .insert([
@@ -31,7 +30,7 @@ export default function Login() {
         description: "Email saved successfully",
       });
 
-      navigate("/dashboard");
+      navigate("/profile");
     } catch (error: any) {
       toast({
         variant: "destructive",
