@@ -31,7 +31,7 @@ export default function Login() {
         description: "Email saved successfully",
       });
 
-      navigate("/dashboard");
+      navigate("/profile");
     } catch (error: any) {
       toast({
         variant: "destructive",
