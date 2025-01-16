@@ -19,19 +19,24 @@ export default function Profile() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data: userEmails } = await supabase
+        // Primero obtenemos el email del usuario actual
+        const { data: userEmail, error: userError } = await supabase
           .from('user_emails')
           .select('id, email')
-          .single();
+          .limit(1)
+          .maybeSingle();
 
-        if (userEmails) {
-          const { data: profileData, error } = await supabase
+        if (userError) throw userError;
+
+        if (userEmail) {
+          // Luego obtenemos el perfil asociado a ese usuario
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
-            .eq('user_id', userEmails.id)
-            .single();
+            .eq('user_id', userEmail.id)
+            .maybeSingle();
 
-          if (error) throw error;
+          if (profileError) throw profileError;
           setProfile(profileData);
         }
       } catch (error: any) {
