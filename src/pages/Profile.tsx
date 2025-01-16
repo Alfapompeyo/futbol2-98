@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,25 +33,16 @@ export default function Profile() {
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
         <div className="flex flex-col items-center space-y-6">
           <img 
-            src="/lovable-uploads/0893c2ac-1331-47e8-b8c6-504c49064b2f.png" 
+            src="/lovable-uploads/676f7f09-d884-481e-b608-45b269e4aa59.png" 
             alt="Logo" 
             className="w-32 h-32"
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+          <div className="w-full max-w-md">
             <Button 
-              className="h-40 text-xl bg-[#0F172A] hover:bg-[#1E293B]"
+              className="w-full h-40 text-xl bg-[#0F172A] hover:bg-[#1E293B]"
               onClick={() => navigate("/dashboard")}
             >
               Fútbol
-            </Button>
-            <Button 
-              className="h-40 text-xl bg-[#0F172A] hover:bg-[#1E293B]"
-              onClick={() => toast({
-                title: "Próximamente",
-                description: "Esta funcionalidad estará disponible pronto",
-              })}
-            >
-              Básquetbol
             </Button>
           </div>
         </div>
