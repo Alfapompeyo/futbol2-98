@@ -2,40 +2,78 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: userEmail } = await supabase
-          .from('user_emails')
-          .select('id, email')
-          .limit(1)
-          .maybeSingle();
+    checkAuth();
+    fetchProfile();
+  }, []);
 
-        if (userEmail) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', userEmail.id)
-            .maybeSingle();
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate("/login");
+      return;
+    }
+  };
 
-          setProfile({ ...profile, email: userEmail.email });
-        }
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Error al cargar el perfil",
+  const fetchProfile = async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/login");
+        return;
+      }
+
+      // Primero buscamos en la tabla staff
+      const { data: staffData } = await supabase
+        .from('staff')
+        .select('*')
+        .eq('email', session.user.email)
+        .single();
+
+      if (staffData) {
+        setProfile({
+          email: staffData.email,
+          nombre: staffData.nombre,
+          apellido1: staffData.apellido1,
+          apellido2: staffData.apellido2,
+          role: staffData.role
         });
       }
-    };
 
-    fetchProfile();
-  }, [toast]);
+    } catch (error: any) {
+      console.error('Error fetching profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Error al cargar el perfil",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-screen bg-gray-100">
+        <Sidebar />
+        <div className="flex-1 p-8">
+          <div className="flex items-center justify-center h-full">
+            <div className="text-lg">Cargando perfil...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -60,6 +98,10 @@ export default function Profile() {
               <div>
                 <h2 className="text-sm font-medium text-gray-500">Apellido Materno</h2>
                 <p className="mt-1">{profile.apellido2 || '-'}</p>
+              </div>
+              <div>
+                <h2 className="text-sm font-medium text-gray-500">Rol</h2>
+                <p className="mt-1">{profile.role || '-'}</p>
               </div>
             </div>
           </div>
