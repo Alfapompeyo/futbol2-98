@@ -18,6 +18,7 @@ import {
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 type UserRole = "administrador" | "jefe_tecnico" | "entrenador" | "kinesiologo" | "medico" | "psicologo";
 
@@ -53,25 +54,40 @@ export default function Staff() {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Debe iniciar sesión para acceder a esta página",
-        });
-        // You might want to redirect to login page here
-        return;
-      }
-      fetchStaff();
-    };
-    
-    checkSession();
+    checkAuth();
   }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Debe iniciar sesión para acceder a esta página",
+      });
+      navigate("/login");
+      return;
+    }
+
+    if (session.user.email !== "renatomartinez951@gmail.com") {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No tiene permisos para acceder a esta página",
+      });
+      navigate("/login");
+      return;
+    }
+
+    setIsAuthorized(true);
+    fetchStaff();
+  };
 
   const fetchStaff = async () => {
     try {
@@ -87,7 +103,7 @@ export default function Staff() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Error al cargar el personal",
+        description: error.message,
       });
       console.error("Error fetching staff:", error);
     } finally {
@@ -99,13 +115,12 @@ export default function Staff() {
     e.preventDefault();
     try {
       setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
       
-      if (!session) {
+      if (!isAuthorized) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Debe iniciar sesión para realizar esta acción",
+          description: "No tiene permisos para realizar esta acción",
         });
         return;
       }
@@ -130,6 +145,7 @@ export default function Staff() {
           description: "Personal agregado correctamente",
         });
       }
+      
       setFormData({
         nombre: "",
         apellido1: "",
@@ -184,6 +200,10 @@ export default function Staff() {
     }
   };
 
+  if (!isAuthorized) {
+    return null;
+  }
+
   return (
     <div className="flex h-screen bg-gray-100">
       <Sidebar />
@@ -205,6 +225,7 @@ export default function Staff() {
                   setFormData({ ...formData, nombre: e.target.value })
                 }
                 disabled={isLoading}
+                required
               />
               <Input
                 placeholder="Apellido Paterno"
@@ -213,6 +234,7 @@ export default function Staff() {
                   setFormData({ ...formData, apellido1: e.target.value })
                 }
                 disabled={isLoading}
+                required
               />
               <Input
                 placeholder="Apellido Materno"
@@ -221,6 +243,7 @@ export default function Staff() {
                   setFormData({ ...formData, apellido2: e.target.value })
                 }
                 disabled={isLoading}
+                required
               />
               <Select
                 value={formData.role}
@@ -248,6 +271,7 @@ export default function Staff() {
                   setFormData({ ...formData, email: e.target.value })
                 }
                 disabled={isLoading}
+                required
               />
               <Input
                 type="password"
@@ -257,6 +281,7 @@ export default function Staff() {
                   setFormData({ ...formData, password: e.target.value })
                 }
                 disabled={isLoading}
+                required
               />
             </div>
             <Button type="submit" className="mt-4" disabled={isLoading}>
