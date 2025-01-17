@@ -52,14 +52,30 @@ export default function Staff() {
     password: "",
   });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchStaff();
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Debe iniciar sesión para acceder a esta página",
+        });
+        // You might want to redirect to login page here
+        return;
+      }
+      fetchStaff();
+    };
+    
+    checkSession();
   }, []);
 
   const fetchStaff = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from("staff")
         .select("*")
@@ -73,12 +89,27 @@ export default function Staff() {
         title: "Error",
         description: "Error al cargar el personal",
       });
+      console.error("Error fetching staff:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      setIsLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Debe iniciar sesión para realizar esta acción",
+        });
+        return;
+      }
+
       if (editingId) {
         const { error } = await supabase
           .from("staff")
@@ -116,6 +147,9 @@ export default function Staff() {
         title: "Error",
         description: error.message,
       });
+      console.error("Error submitting staff:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -156,7 +190,7 @@ export default function Staff() {
       <div className="flex-1 p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Personal</h1>
-          <Button onClick={() => setShowForm(!showForm)}>
+          <Button onClick={() => setShowForm(!showForm)} disabled={isLoading}>
             {showForm ? "Cancelar" : "Añadir Personal"}
           </Button>
         </div>
@@ -170,6 +204,7 @@ export default function Staff() {
                 onChange={(e) =>
                   setFormData({ ...formData, nombre: e.target.value })
                 }
+                disabled={isLoading}
               />
               <Input
                 placeholder="Apellido Paterno"
@@ -177,6 +212,7 @@ export default function Staff() {
                 onChange={(e) =>
                   setFormData({ ...formData, apellido1: e.target.value })
                 }
+                disabled={isLoading}
               />
               <Input
                 placeholder="Apellido Materno"
@@ -184,12 +220,14 @@ export default function Staff() {
                 onChange={(e) =>
                   setFormData({ ...formData, apellido2: e.target.value })
                 }
+                disabled={isLoading}
               />
               <Select
                 value={formData.role}
                 onValueChange={(value: UserRole) =>
                   setFormData({ ...formData, role: value })
                 }
+                disabled={isLoading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Tipo de Usuario" />
@@ -209,6 +247,7 @@ export default function Staff() {
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
+                disabled={isLoading}
               />
               <Input
                 type="password"
@@ -217,9 +256,10 @@ export default function Staff() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="mt-4">
+            <Button type="submit" className="mt-4" disabled={isLoading}>
               {editingId ? "Actualizar" : "Guardar"}
             </Button>
           </form>
@@ -243,7 +283,7 @@ export default function Staff() {
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
+                    <Button variant="ghost" className="h-8 w-8 p-0" disabled={isLoading}>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
