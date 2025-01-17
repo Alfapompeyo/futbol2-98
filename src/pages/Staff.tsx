@@ -19,7 +19,9 @@ import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const roles = [
+type UserRole = "administrador" | "jefe_tecnico" | "entrenador" | "kinesiologo" | "medico" | "psicologo";
+
+const roles: { value: UserRole; label: string }[] = [
   { value: "administrador", label: "Administrador" },
   { value: "jefe_tecnico", label: "Jefe Técnico" },
   { value: "entrenador", label: "Entrenador" },
@@ -28,14 +30,24 @@ const roles = [
   { value: "psicologo", label: "Psicólogo" },
 ];
 
+interface StaffMember {
+  id: string;
+  nombre: string;
+  apellido1: string;
+  apellido2: string;
+  role: UserRole;
+  email: string;
+  password: string;
+}
+
 export default function Staff() {
   const [showForm, setShowForm] = useState(false);
-  const [staffList, setStaffList] = useState<any[]>([]);
-  const [formData, setFormData] = useState({
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [formData, setFormData] = useState<Omit<StaffMember, 'id'>>({
     nombre: "",
     apellido1: "",
     apellido2: "",
-    role: "",
+    role: "administrador",
     email: "",
     password: "",
   });
@@ -78,7 +90,9 @@ export default function Staff() {
           description: "Personal actualizado correctamente",
         });
       } else {
-        const { error } = await supabase.from("staff").insert([formData]);
+        const { error } = await supabase
+          .from("staff")
+          .insert([formData]);
         if (error) throw error;
         toast({
           title: "Éxito",
@@ -89,7 +103,7 @@ export default function Staff() {
         nombre: "",
         apellido1: "",
         apellido2: "",
-        role: "",
+        role: "administrador",
         email: "",
         password: "",
       });
@@ -105,7 +119,7 @@ export default function Staff() {
     }
   };
 
-  const handleEdit = (staff: any) => {
+  const handleEdit = (staff: StaffMember) => {
     setFormData({
       nombre: staff.nombre,
       apellido1: staff.apellido1,
@@ -173,7 +187,7 @@ export default function Staff() {
               />
               <Select
                 value={formData.role}
-                onValueChange={(value) =>
+                onValueChange={(value: UserRole) =>
                   setFormData({ ...formData, role: value })
                 }
               >
