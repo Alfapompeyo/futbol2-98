@@ -206,44 +206,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
-        Row: {
-          apellido1: string | null
-          apellido2: string | null
-          created_at: string
-          id: string
-          nombre: string | null
-          user_id: string | null
-          usuario: string | null
-        }
-        Insert: {
-          apellido1?: string | null
-          apellido2?: string | null
-          created_at?: string
-          id?: string
-          nombre?: string | null
-          user_id?: string | null
-          usuario?: string | null
-        }
-        Update: {
-          apellido1?: string | null
-          apellido2?: string | null
-          created_at?: string
-          id?: string
-          nombre?: string | null
-          user_id?: string | null
-          usuario?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "user_emails"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_emails: {
         Row: {
           created_at: string
