@@ -7,7 +7,6 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Medical from "./pages/Medical";
 import Physical from "./pages/Physical";
-import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -20,7 +19,6 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/medical" element={<Medical />} />
           <Route path="/dashboard/physical" element={<Physical />} />
