@@ -1,17 +1,44 @@
-import { Gift, Activity, UserCog, LogOut } from "lucide-react";
+import { Gift, Activity, UserCog, LogOut, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const menuItems = [
+const baseMenuItems = [
   { name: "Fútbol", icon: Gift, path: "/dashboard" },
   { name: "Parte Médica", icon: Activity, path: "/dashboard/medical" },
   { name: "Parte Física", icon: UserCog, path: "/dashboard/physical" },
-  { name: "Cerrar Sesión", icon: LogOut, path: "/login" },
 ];
 
 export function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [menuItems, setMenuItems] = useState(baseMenuItems);
+
+  useEffect(() => {
+    checkAdminStatus();
+  }, []);
+
+  const checkAdminStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: staffMember } = await supabase
+        .from('staff')
+        .select('is_admin')
+        .eq('email', user.email)
+        .single();
+
+      setIsAdmin(!!staffMember?.is_admin);
+      
+      if (staffMember?.is_admin) {
+        setMenuItems([
+          ...baseMenuItems,
+          { name: "Personal", icon: Users, path: "/dashboard/staff" },
+        ]);
+      }
+    }
+  };
 
   const handleNavigation = (path: string, name: string) => {
     if (name === "Cerrar Sesión") {
@@ -36,14 +63,23 @@ export function Sidebar() {
               "w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg",
               location.pathname === item.path
                 ? "bg-[#0F172A] text-white"
-                : "text-gray-700 hover:bg-gray-100",
-              item.name === "Cerrar Sesión" && "mt-auto"
+                : "text-gray-700 hover:bg-gray-100"
             )}
           >
             <item.icon className="w-5 h-5" />
             {item.name}
           </button>
         ))}
+        <button
+          onClick={() => handleNavigation("/login", "Cerrar Sesión")}
+          className={cn(
+            "w-full flex items-center gap-2 px-4 py-2 text-sm rounded-lg mt-auto",
+            "text-gray-700 hover:bg-gray-100"
+          )}
+        >
+          <LogOut className="w-5 h-5" />
+          Cerrar Sesión
+        </button>
       </nav>
     </div>
   );
