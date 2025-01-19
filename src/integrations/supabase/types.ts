@@ -244,6 +244,42 @@ export type Database = {
           },
         ]
       }
+      staff: {
+        Row: {
+          apellido1: string
+          apellido2: string
+          created_at: string
+          email: string
+          id: string
+          is_admin: boolean | null
+          nombre: string
+          password: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          apellido1: string
+          apellido2: string
+          created_at?: string
+          email: string
+          id?: string
+          is_admin?: boolean | null
+          nombre: string
+          password: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          apellido1?: string
+          apellido2?: string
+          created_at?: string
+          email?: string
+          id?: string
+          is_admin?: boolean | null
+          nombre?: string
+          password?: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
       user_emails: {
         Row: {
           created_at: string
@@ -273,7 +309,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role:
+        | "administrador"
+        | "jefe_tecnico"
+        | "entrenador"
+        | "kinesiologo"
+        | "medico"
+        | "psicologo"
     }
     CompositeTypes: {
       [_ in never]: never
