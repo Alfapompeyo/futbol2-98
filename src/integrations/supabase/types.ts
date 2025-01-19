@@ -248,6 +248,8 @@ export type Database = {
         Row: {
           apellido1: string
           apellido2: string
+          areas: Database["public"]["Enums"]["staff_area"][] | null
+          category_ids: string[] | null
           created_at: string
           email: string
           id: string
@@ -259,6 +261,8 @@ export type Database = {
         Insert: {
           apellido1: string
           apellido2: string
+          areas?: Database["public"]["Enums"]["staff_area"][] | null
+          category_ids?: string[] | null
           created_at?: string
           email: string
           id?: string
@@ -270,6 +274,8 @@ export type Database = {
         Update: {
           apellido1?: string
           apellido2?: string
+          areas?: Database["public"]["Enums"]["staff_area"][] | null
+          category_ids?: string[] | null
           created_at?: string
           email?: string
           id?: string
@@ -309,6 +315,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      staff_area: "MEDICA" | "FISICA" | "FUTBOL"
       user_role:
         | "administrador"
         | "jefe_tecnico"
