@@ -10,7 +10,6 @@ import { MatchesList } from "@/components/dashboard/MatchesList";
 import { PlayerEvaluation } from "@/components/evaluation/PlayerEvaluation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { User, Users } from "lucide-react";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("categories");
@@ -27,24 +26,20 @@ export default function Dashboard() {
   const [categoryToEdit, setCategoryToEdit] = useState<{ id: string; name: string } | null>(null);
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    checkAdminStatus();
+    fetchCategories();
   }, []);
 
-  const checkAdminStatus = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: staffMember } = await supabase
-        .from('staff')
-        .select('is_admin')
-        .eq('email', user.email)
-        .single();
-
-      setIsAdmin(!!staffMember?.is_admin);
+  useEffect(() => {
+    if (selectedCategory) {
+      if (activeView === "players") {
+        fetchPlayers(selectedCategory);
+      } else {
+        fetchMatches(selectedCategory);
+      }
     }
-  };
+  }, [selectedCategory, activeView]);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase.from("categories").select("*");
@@ -350,7 +345,7 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold mb-4">Fútbol</h1>
         <div className="flex gap-4 mb-8">
           <button
-            className={`px-4 py-2 text-sm font-medium flex items-center gap-2 ${
+            className={`px-4 py-2 text-sm font-medium ${
               activeTab === "categories"
                 ? "bg-[#0F172A] text-white"
                 : "text-gray-600"
@@ -360,123 +355,91 @@ export default function Dashboard() {
             Categorías
           </button>
           <button
-            className={`px-4 py-2 text-sm font-medium flex items-center gap-2 ${
-              activeTab === "profile"
+            className={`px-4 py-2 text-sm font-medium ${
+              activeTab === "personal"
                 ? "bg-[#0F172A] text-white"
                 : "text-gray-600"
             } rounded-lg`}
-            onClick={() => setActiveTab("profile")}
+            onClick={() => setActiveTab("personal")}
           >
-            <User className="w-4 h-4" />
-            Mi Perfil
+            Personal
           </button>
-          {isAdmin && (
-            <button
-              className={`px-4 py-2 text-sm font-medium flex items-center gap-2 ${
-                activeTab === "staff"
-                  ? "bg-[#0F172A] text-white"
-                  : "text-gray-600"
-              } rounded-lg`}
-              onClick={() => setActiveTab("staff")}
-            >
-              <Users className="w-4 h-4" />
-              Gestionar Personal
-            </button>
-          )}
         </div>
 
-        {activeTab === "categories" && (
-          <>
-            <div className="mb-8">
-              <AddCategoryButton onClick={() => {
-                setCategoryToEdit(null);
-                setShowAddCategory(true);
-              }} />
+        <div className="mb-8">
+          <AddCategoryButton onClick={() => {
+            setCategoryToEdit(null);
+            setShowAddCategory(true);
+          }} />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {categories.map((category) => (
+            <CategoryCard
+              key={category.id}
+              id={category.id}
+              name={category.name}
+              onAddPlayer={() => {
+                setSelectedCategory(category.id);
+                setShowAddPlayer(true);
+                setActiveView("players");
+              }}
+              onAddMatch={() => {
+                setSelectedCategory(category.id);
+                setShowAddMatch(true);
+              }}
+              onShowPlayers={() => {
+                setSelectedCategory(category.id);
+                setActiveView("players");
+                fetchPlayers(category.id);
+              }}
+              onEdit={handleEditCategory}
+              onDelete={handleDeleteCategory}
+            />
+          ))}
+        </div>
+
+        {selectedCategory && (
+          <div className="mt-8">
+            <div className="flex gap-4 mb-4">
+              <button
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeView === "players"
+                    ? "bg-[#9333EA] text-white"
+                    : "text-gray-600 border border-gray-300"
+                } rounded-lg`}
+                onClick={() => setActiveView("players")}
+              >
+                Jugadores
+              </button>
+              <button
+                className={`px-4 py-2 text-sm font-medium ${
+                  activeView === "matches"
+                    ? "bg-[#9333EA] text-white"
+                    : "text-gray-600 border border-gray-300"
+                } rounded-lg`}
+                onClick={() => setActiveView("matches")}
+              >
+                Partidos
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {categories.map((category) => (
-                <CategoryCard
-                  key={category.id}
-                  id={category.id}
-                  name={category.name}
-                  onAddPlayer={() => {
-                    setSelectedCategory(category.id);
-                    setShowAddPlayer(true);
-                    setActiveView("players");
-                  }}
-                  onAddMatch={() => {
-                    setSelectedCategory(category.id);
-                    setShowAddMatch(true);
-                  }}
-                  onShowPlayers={() => {
-                    setSelectedCategory(category.id);
-                    setActiveView("players");
-                    fetchPlayers(category.id);
-                  }}
-                  onEdit={handleEditCategory}
-                  onDelete={handleDeleteCategory}
-                />
-              ))}
-            </div>
-
-            {selectedCategory && (
-              <div className="mt-8">
-                <div className="flex gap-4 mb-4">
-                  <button
-                    className={`px-4 py-2 text-sm font-medium ${
-                      activeView === "players"
-                        ? "bg-[#9333EA] text-white"
-                        : "text-gray-600 border border-gray-300"
-                    } rounded-lg`}
-                    onClick={() => setActiveView("players")}
-                  >
-                    Jugadores
-                  </button>
-                  <button
-                    className={`px-4 py-2 text-sm font-medium ${
-                      activeView === "matches"
-                        ? "bg-[#9333EA] text-white"
-                        : "text-gray-600 border border-gray-300"
-                    } rounded-lg`}
-                    onClick={() => setActiveView("matches")}
-                  >
-                    Partidos
-                  </button>
-                </div>
-
-                {activeView === "players" && players.length > 0 && (
-                  <PlayersList 
-                    players={players} 
-                    onEdit={handleEditPlayer}
-                    onDelete={handleDeletePlayer}
-                  />
-                )}
-
-                {activeView === "matches" && matches.length > 0 && (
-                  <MatchesList 
-                    matches={matches}
-                    onEdit={handleEditMatch}
-                    onDelete={handleDeleteMatch}
-                    onEvaluate={handleEvaluateMatch}
-                  />
-                )}
-              </div>
+            {activeView === "players" && players.length > 0 && (
+              <PlayersList 
+                players={players} 
+                onEdit={handleEditPlayer}
+                onDelete={handleDeletePlayer}
+              />
             )}
-          </>
-        )}
 
-        {activeTab === "profile" && (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Mi Perfil</h2>
-            {/* Aquí irá el contenido del perfil */}
-          </div>
-        )}
-
-        {activeTab === "staff" && isAdmin && (
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Gestión de Personal</h2>
-            {/* Aquí irá el contenido de gestión de personal */}
+            {activeView === "matches" && matches.length > 0 && (
+              <MatchesList 
+                matches={matches}
+                onEdit={handleEditMatch}
+                onDelete={handleDeleteMatch}
+                onEvaluate={handleEvaluateMatch}
+              />
+            )}
           </div>
         )}
 
