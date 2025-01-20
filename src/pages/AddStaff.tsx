@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function AddStaff() {
   const [formData, setFormData] = useState({
@@ -12,9 +14,25 @@ export default function AddStaff() {
     apellidoMaterno: "",
     correo: "",
     contrasena: "",
+    areas: [] as string[],
   });
 
   const { toast } = useToast();
+
+  const areas = [
+    { id: "futbol", label: "Fútbol" },
+    { id: "parte_fisica", label: "Parte Física" },
+    { id: "parte_medica", label: "Parte Médica" },
+  ];
+
+  const handleAreaChange = (areaId: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      areas: checked 
+        ? [...prev.areas, areaId]
+        : prev.areas.filter(id => id !== areaId)
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +53,7 @@ export default function AddStaff() {
         apellidoMaterno: "",
         correo: "",
         contrasena: "",
+        areas: [],
       });
     } catch (error) {
       toast({
@@ -84,6 +103,23 @@ export default function AddStaff() {
                 onChange={(e) => setFormData({ ...formData, apellidoMaterno: e.target.value })}
                 required
               />
+            </div>
+            <div className="space-y-4">
+              <Label className="text-sm font-medium">Área</Label>
+              <div className="grid gap-4">
+                {areas.map((area) => (
+                  <div key={area.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={area.id}
+                      checked={formData.areas.includes(area.id)}
+                      onCheckedChange={(checked) => handleAreaChange(area.id, checked as boolean)}
+                    />
+                    <Label htmlFor={area.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {area.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
               <label htmlFor="correo" className="block text-sm font-medium mb-1">
