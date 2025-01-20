@@ -1,4 +1,4 @@
-import { Gift, Activity, UserCog, LogOut } from "lucide-react";
+import { Gift, Activity, UserCog, LogOut, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -6,6 +6,7 @@ const menuItems = [
   { name: "Fútbol", icon: Gift, path: "/dashboard" },
   { name: "Parte Médica", icon: Activity, path: "/dashboard/medical" },
   { name: "Parte Física", icon: UserCog, path: "/dashboard/physical" },
+  { name: "Añadir Personal", icon: UserPlus, path: "/dashboard/add-staff" },
   { name: "Cerrar Sesión", icon: LogOut, path: "/login" },
 ];
 
