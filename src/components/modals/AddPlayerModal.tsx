@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Image, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
 const positions = [
@@ -91,7 +90,9 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Error uploading image');
+      if (!response.ok) {
+        throw new Error('Error uploading image');
+      }
 
       const { url } = await response.json();
       setPlayer({ ...player, image_url: url });
@@ -100,6 +101,7 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
         description: "Imagen subida correctamente",
       });
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -112,6 +114,14 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!player.name || !player.position) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Por favor complete los campos requeridos",
+      });
+      return;
+    }
     onAdd(player);
     setPlayer({ name: "", age: "", height: "", weight: "", position: "", image_url: "" });
     onClose();
@@ -171,7 +181,29 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
               placeholder="Nombre del jugador"
               value={player.name}
               onChange={(e) => setPlayer({ ...player, name: e.target.value })}
+              required
             />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="position" className="text-sm font-medium">
+              Posición
+            </label>
+            <Select
+              value={player.position}
+              onValueChange={(value) => setPlayer({ ...player, position: value })}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona una posición" />
+              </SelectTrigger>
+              <SelectContent>
+                {positions.map((position) => (
+                  <SelectItem key={position.value} value={position.value}>
+                    {position.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <label htmlFor="age" className="text-sm font-medium">
@@ -205,26 +237,6 @@ export function AddPlayerModal({ isOpen, onClose, onAdd, initialData }: AddPlaye
               value={player.weight}
               onChange={(e) => setPlayer({ ...player, weight: e.target.value })}
             />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="position" className="text-sm font-medium">
-              Posición
-            </label>
-            <Select
-              value={player.position}
-              onValueChange={(value) => setPlayer({ ...player, position: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona una posición" />
-              </SelectTrigger>
-              <SelectContent>
-                {positions.map((position) => (
-                  <SelectItem key={position.value} value={position.value}>
-                    {position.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <Button type="submit" className="w-full bg-[#0F172A] hover:bg-[#1E293B]">
             {initialData ? "Guardar Cambios" : "Añadir Jugador"}

@@ -96,7 +96,9 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       data.forEach((evaluation) => {
         evaluationsMap[evaluation.player_id] = {
           ...evaluation,
-          goal_types: evaluation.goal_types?.map((gt: any) => ({ type: gt.type })) || []
+          goal_types: Array.isArray(evaluation.goal_types) 
+            ? evaluation.goal_types.map((gt: any) => ({ type: gt.type })) 
+            : []
         };
       });
       setEvaluations(evaluationsMap);
