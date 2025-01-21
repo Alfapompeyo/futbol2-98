@@ -5,19 +5,27 @@ import { CategoryCard } from "@/components/dashboard/CategoryCard";
 import { AddCategoryModal } from "@/components/modals/AddCategoryModal";
 import { AddPlayerModal } from "@/components/modals/AddPlayerModal";
 import { AddMatchModal } from "@/components/modals/AddMatchModal";
+import { AddSeasonModal } from "@/components/modals/AddSeasonModal";
 import { PlayersList } from "@/components/dashboard/PlayersList";
 import { MatchesList } from "@/components/dashboard/MatchesList";
 import { PlayerEvaluation } from "@/components/evaluation/PlayerEvaluation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { UserPlus, CalendarPlus } from "lucide-react";
+import { UserPlus, CalendarPlus, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [showAddMatch, setShowAddMatch] = useState(false);
+  const [showAddSeason, setShowAddSeason] = useState(false);
   const [categories, setCategories] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [players, setPlayers] = useState<any[]>([]);
@@ -28,6 +36,8 @@ export default function Dashboard() {
   const [categoryToEdit, setCategoryToEdit] = useState<{ id: string; name: string } | null>(null);
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+  const [seasons, setSeasons] = useState<Array<{ id: string; name: string }>>([]);
+  const [selectedSeason, setSelectedSeason] = useState<{ id: string; name: string } | null>(null);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
@@ -63,11 +73,17 @@ export default function Dashboard() {
   };
 
   const fetchMatches = async (categoryId: string) => {
-    const { data, error } = await supabase
+    const query = supabase
       .from("matches")
       .select("*")
       .eq("category_id", categoryId)
-      .order('date', { ascending: false }) as { data: any[] | null; error: any };
+      .order('date', { ascending: false });
+
+    if (selectedSeason) {
+      query.eq("season_id", selectedSeason.id);
+    }
+
+    const { data, error } = await query;
     
     if (error) {
       toast({
@@ -78,6 +94,23 @@ export default function Dashboard() {
       return;
     }
     setMatches(data || []);
+  };
+
+  const fetchSeasons = async () => {
+    const { data, error } = await supabase
+      .from("seasons")
+      .select("*")
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudieron cargar las temporadas",
+      });
+      return;
+    }
+    setSeasons(data || []);
   };
 
   const handleBack = () => {
@@ -245,7 +278,7 @@ export default function Dashboard() {
     try {
       const { error } = await supabase
         .from("matches")
-        .insert([{ ...matchData, category_id: selectedCategory }]);
+        .insert([{ ...matchData, category_id: selectedCategory, season_id: selectedSeason?.id }]);
 
       if (error) throw error;
 
@@ -323,11 +356,38 @@ export default function Dashboard() {
     setShowEvaluation(true);
   };
 
+  const handleAddSeason = async (seasonData: { name: string }) => {
+    try {
+      const { error } = await supabase
+        .from("seasons")
+        .insert([seasonData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Temporada creada correctamente",
+      });
+
+      fetchSeasons();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo crear la temporada",
+      });
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "categories") {
       fetchCategories();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    fetchSeasons();
+  }, []);
 
   if (showEvaluation && selectedCategory && selectedMatchId) {
     return (
@@ -484,21 +544,52 @@ export default function Dashboard() {
 
             {activeView === "matches" && (
               <div className="space-y-4">
-                <Button
-                  onClick={() => setShowAddMatch(true)}
-                  variant="outline"
-                  className="w-full gap-2"
-                >
-                  <CalendarPlus className="w-4 h-4" />
-                  Crear Partido
-                </Button>
-                {matches.length > 0 && (
-                  <MatchesList 
-                    matches={matches}
-                    onEdit={handleEditMatch}
-                    onDelete={handleDeleteMatch}
-                    onEvaluate={handleEvaluateMatch}
-                  />
+                <div className="flex gap-4 items-center mb-4">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="w-48">
+                        {selectedSeason ? selectedSeason.name : "Seleccionar Temporada"}
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      {seasons.map((season) => (
+                        <DropdownMenuItem
+                          key={season.id}
+                          onClick={() => setSelectedSeason(season)}
+                        >
+                          {season.name}
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuItem
+                        onClick={() => setShowAddSeason(true)}
+                        className="text-blue-600"
+                      >
+                        + Crear Temporada
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {selectedSeason && (
+                  <>
+                    <Button
+                      onClick={() => setShowAddMatch(true)}
+                      variant="outline"
+                      className="w-full gap-2"
+                    >
+                      <CalendarPlus className="w-4 h-4" />
+                      Crear Partido
+                    </Button>
+                    {matches.length > 0 && (
+                      <MatchesList 
+                        matches={matches}
+                        onEdit={handleEditMatch}
+                        onDelete={handleDeleteMatch}
+                        onEvaluate={handleEvaluateMatch}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -525,6 +616,13 @@ export default function Dashboard() {
           isOpen={showAddMatch}
           onClose={() => setShowAddMatch(false)}
           onAdd={handleAddMatch}
+          seasonId={selectedSeason?.id || ""}
+        />
+
+        <AddSeasonModal
+          isOpen={showAddSeason}
+          onClose={() => setShowAddSeason(false)}
+          onAdd={handleAddSeason}
         />
       </main>
     </div>

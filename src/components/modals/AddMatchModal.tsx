@@ -7,9 +7,10 @@ interface AddMatchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (match: any) => void;
+  seasonId: string;
 }
 
-export function AddMatchModal({ isOpen, onClose, onAdd }: AddMatchModalProps) {
+export function AddMatchModal({ isOpen, onClose, onAdd, seasonId }: AddMatchModalProps) {
   const [match, setMatch] = useState({
     opponent: "",
     date: "",
@@ -18,7 +19,7 @@ export function AddMatchModal({ isOpen, onClose, onAdd }: AddMatchModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd(match);
+    onAdd({ ...match, season_id: seasonId });
     setMatch({ opponent: "", date: "", location: "" });
     onClose();
   };
@@ -63,7 +64,7 @@ export function AddMatchModal({ isOpen, onClose, onAdd }: AddMatchModalProps) {
               onChange={(e) => setMatch({ ...match, location: e.target.value })}
             />
           </div>
-          <Button type="submit" className="w-full bg-[#0F172A] hover:bg-[#1E293B]">
+          <Button type="submit" className="w-full">
             Añadir Partido
           </Button>
         </form>
