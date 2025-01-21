@@ -10,6 +10,8 @@ import { MatchesList } from "@/components/dashboard/MatchesList";
 import { PlayerEvaluation } from "@/components/evaluation/PlayerEvaluation";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { UserPlus, CalendarPlus } from "lucide-react";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("");
@@ -28,7 +30,10 @@ export default function Dashboard() {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
   const fetchCategories = async () => {
-    const { data, error } = await supabase.from("categories").select("*");
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*") as { data: Array<{ id: string; name: string }> | null; error: any };
+    
     if (error) {
       toast({
         variant: "destructive",
@@ -37,14 +42,14 @@ export default function Dashboard() {
       });
       return;
     }
-    setCategories(data);
+    setCategories(data || []);
   };
 
   const fetchPlayers = async (categoryId: string) => {
     const { data, error } = await supabase
       .from("players")
       .select("*")
-      .eq("category_id", categoryId);
+      .eq("category_id", categoryId) as { data: any[] | null; error: any };
     
     if (error) {
       toast({
@@ -54,7 +59,7 @@ export default function Dashboard() {
       });
       return;
     }
-    setPlayers(data);
+    setPlayers(data || []);
   };
 
   const fetchMatches = async (categoryId: string) => {
@@ -62,7 +67,7 @@ export default function Dashboard() {
       .from("matches")
       .select("*")
       .eq("category_id", categoryId)
-      .order('date', { ascending: false });
+      .order('date', { ascending: false }) as { data: any[] | null; error: any };
     
     if (error) {
       toast({
@@ -72,7 +77,7 @@ export default function Dashboard() {
       });
       return;
     }
-    setMatches(data);
+    setMatches(data || []);
   };
 
   const handleBack = () => {
@@ -331,6 +336,8 @@ export default function Dashboard() {
     );
   }
 
+  const selectedCategoryName = categories.find(cat => cat.id === selectedCategory)?.name;
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
@@ -422,6 +429,10 @@ export default function Dashboard() {
               Volver
             </button>
 
+            {selectedCategoryName && (
+              <h2 className="text-2xl font-bold mb-6">{selectedCategoryName}</h2>
+            )}
+
             <div className="flex gap-4 mb-4">
               <button
                 className={`px-4 py-2 text-sm font-medium ${
@@ -445,21 +456,45 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {activeView === "players" && players.length > 0 && (
-              <PlayersList 
-                players={players} 
-                onEdit={handleEditPlayer}
-                onDelete={handleDeletePlayer}
-              />
+            {activeView === "players" && (
+              <div className="space-y-4">
+                <Button
+                  onClick={() => setShowAddPlayer(true)}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Añadir Jugador
+                </Button>
+                {players.length > 0 && (
+                  <PlayersList 
+                    players={players} 
+                    onEdit={handleEditPlayer}
+                    onDelete={handleDeletePlayer}
+                  />
+                )}
+              </div>
             )}
 
-            {activeView === "matches" && matches.length > 0 && (
-              <MatchesList 
-                matches={matches}
-                onEdit={handleEditMatch}
-                onDelete={handleDeleteMatch}
-                onEvaluate={handleEvaluateMatch}
-              />
+            {activeView === "matches" && (
+              <div className="space-y-4">
+                <Button
+                  onClick={() => setShowAddMatch(true)}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <CalendarPlus className="w-4 h-4" />
+                  Crear Partido
+                </Button>
+                {matches.length > 0 && (
+                  <MatchesList 
+                    matches={matches}
+                    onEdit={handleEditMatch}
+                    onDelete={handleDeleteMatch}
+                    onEvaluate={handleEvaluateMatch}
+                  />
+                )}
+              </div>
             )}
           </div>
         )}
