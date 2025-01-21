@@ -14,15 +14,12 @@ export default function Login() {
     e.preventDefault();
     
     try {
-      // Save email and password to the database
       const { error } = await supabase
         .from('user_emails')
-        .insert([
-          { 
-            email: credentials.email,
-            password: credentials.password
-          }
-        ]);
+        .insert({
+          email: credentials.email,
+          password: credentials.password
+        });
 
       if (error) throw error;
 

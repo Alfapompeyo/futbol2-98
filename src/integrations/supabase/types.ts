@@ -56,7 +56,7 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "matches"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       match_statistics: {
@@ -65,7 +65,7 @@ export type Database = {
           comments: string | null
           created_at: string
           crosses: number | null
-          goal_types: Json | null
+          goal_types: { type: string }[] | null
           goals: number | null
           id: string
           match_id: string | null
@@ -81,7 +81,7 @@ export type Database = {
           comments?: string | null
           created_at?: string
           crosses?: number | null
-          goal_types?: Json | null
+          goal_types?: { type: string }[] | null
           goals?: number | null
           id?: string
           match_id?: string | null
@@ -97,7 +97,7 @@ export type Database = {
           comments?: string | null
           created_at?: string
           crosses?: number | null
-          goal_types?: Json | null
+          goal_types?: { type: string }[] | null
           goals?: number | null
           id?: string
           match_id?: string | null
@@ -122,7 +122,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       matches: {
@@ -167,7 +167,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "seasons"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       players: {
@@ -202,7 +202,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       seasons: {
@@ -220,6 +220,27 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      user_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          password: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          password: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          password?: string
         }
         Relationships: []
       }
