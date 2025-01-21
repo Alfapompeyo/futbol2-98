@@ -323,6 +323,12 @@ export default function Dashboard() {
     setShowEvaluation(true);
   };
 
+  useEffect(() => {
+    if (activeTab === "categories") {
+      fetchCategories();
+    }
+  }, [activeTab]);
+
   if (showEvaluation && selectedCategory && selectedMatchId) {
     return (
       <PlayerEvaluation
