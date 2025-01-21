@@ -9,7 +9,220 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      match_lineups: {
+        Row: {
+          created_at: string
+          formation: string
+          id: string
+          match_id: string | null
+          positions: Json | null
+        }
+        Insert: {
+          created_at?: string
+          formation: string
+          id?: string
+          match_id?: string | null
+          positions?: Json | null
+        }
+        Update: {
+          created_at?: string
+          formation?: string
+          id?: string
+          match_id?: string | null
+          positions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_lineups_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_statistics: {
+        Row: {
+          assists: number | null
+          comments: string | null
+          created_at: string
+          crosses: number | null
+          goal_types: Json | null
+          goals: number | null
+          id: string
+          match_id: string | null
+          minutes_played: number | null
+          player_id: string | null
+          rating: number | null
+          red_cards: number | null
+          saves: number | null
+          yellow_cards: number | null
+        }
+        Insert: {
+          assists?: number | null
+          comments?: string | null
+          created_at?: string
+          crosses?: number | null
+          goal_types?: Json | null
+          goals?: number | null
+          id?: string
+          match_id?: string | null
+          minutes_played?: number | null
+          player_id?: string | null
+          rating?: number | null
+          red_cards?: number | null
+          saves?: number | null
+          yellow_cards?: number | null
+        }
+        Update: {
+          assists?: number | null
+          comments?: string | null
+          created_at?: string
+          crosses?: number | null
+          goal_types?: Json | null
+          goals?: number | null
+          id?: string
+          match_id?: string | null
+          minutes_played?: number | null
+          player_id?: string | null
+          rating?: number | null
+          red_cards?: number | null
+          saves?: number | null
+          yellow_cards?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_statistics_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_statistics_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matches: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          date: string
+          id: string
+          location: string | null
+          opponent: string
+          season_id: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          location?: string | null
+          opponent: string
+          season_id?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          location?: string | null
+          opponent?: string
+          season_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      players: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          position: string | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          position?: string | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          position?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
