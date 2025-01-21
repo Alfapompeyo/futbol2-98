@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("categories");
+  const [activeTab, setActiveTab] = useState("");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showAddPlayer, setShowAddPlayer] = useState(false);
   const [showAddMatch, setShowAddMatch] = useState(false);
@@ -26,20 +26,6 @@ export default function Dashboard() {
   const [categoryToEdit, setCategoryToEdit] = useState<{ id: string; name: string } | null>(null);
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    if (selectedCategory) {
-      if (activeView === "players") {
-        fetchPlayers(selectedCategory);
-      } else {
-        fetchMatches(selectedCategory);
-      }
-    }
-  }, [selectedCategory, activeView]);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase.from("categories").select("*");
@@ -87,6 +73,13 @@ export default function Dashboard() {
       return;
     }
     setMatches(data);
+  };
+
+  const handleBack = () => {
+    setSelectedCategory(null);
+    setPlayers([]);
+    setMatches([]);
+    setActiveTab("categories");
   };
 
   const handleEditCategory = async (categoryId: string) => {
@@ -350,7 +343,10 @@ export default function Dashboard() {
                 ? "bg-[#0F172A] text-white"
                 : "text-gray-600"
             } rounded-lg`}
-            onClick={() => setActiveTab("categories")}
+            onClick={() => {
+              setActiveTab("categories");
+              setSelectedCategory(null);
+            }}
           >
             Categorías
           </button>
@@ -366,41 +362,66 @@ export default function Dashboard() {
           </button>
         </div>
 
-        <div className="mb-8">
-          <AddCategoryButton onClick={() => {
-            setCategoryToEdit(null);
-            setShowAddCategory(true);
-          }} />
-        </div>
+        {activeTab === "categories" && !selectedCategory && (
+          <>
+            <div className="mb-8">
+              <AddCategoryButton onClick={() => {
+                setCategoryToEdit(null);
+                setShowAddCategory(true);
+              }} />
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              id={category.id}
-              name={category.name}
-              onAddPlayer={() => {
-                setSelectedCategory(category.id);
-                setShowAddPlayer(true);
-                setActiveView("players");
-              }}
-              onAddMatch={() => {
-                setSelectedCategory(category.id);
-                setShowAddMatch(true);
-              }}
-              onShowPlayers={() => {
-                setSelectedCategory(category.id);
-                setActiveView("players");
-                fetchPlayers(category.id);
-              }}
-              onEdit={handleEditCategory}
-              onDelete={handleDeleteCategory}
-            />
-          ))}
-        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  id={category.id}
+                  name={category.name}
+                  onAddPlayer={() => {
+                    setSelectedCategory(category.id);
+                    setShowAddPlayer(true);
+                    setActiveView("players");
+                  }}
+                  onAddMatch={() => {
+                    setSelectedCategory(category.id);
+                    setShowAddMatch(true);
+                  }}
+                  onShowPlayers={() => {
+                    setSelectedCategory(category.id);
+                    setActiveView("players");
+                    fetchPlayers(category.id);
+                  }}
+                  onEdit={handleEditCategory}
+                  onDelete={handleDeleteCategory}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {selectedCategory && (
           <div className="mt-8">
+            <button
+              onClick={handleBack}
+              className="mb-6 flex items-center text-sm text-gray-600 hover:text-gray-900"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 mr-1"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
+              Volver
+            </button>
+
             <div className="flex gap-4 mb-4">
               <button
                 className={`px-4 py-2 text-sm font-medium ${
