@@ -172,28 +172,37 @@ export type Database = {
       }
       players: {
         Row: {
+          age: number | null
           category_id: string | null
           created_at: string
+          height: string | null
           id: string
           image_url: string | null
           name: string
           position: string | null
+          weight: string | null
         }
         Insert: {
+          age?: number | null
           category_id?: string | null
           created_at?: string
+          height?: string | null
           id?: string
           image_url?: string | null
           name: string
           position?: string | null
+          weight?: string | null
         }
         Update: {
+          age?: number | null
           category_id?: string | null
           created_at?: string
+          height?: string | null
           id?: string
           image_url?: string | null
           name?: string
           position?: string | null
+          weight?: string | null
         }
         Relationships: [
           {

@@ -389,6 +389,19 @@ export default function Dashboard() {
     fetchSeasons();
   }, []);
 
+  useEffect(() => {
+    if (selectedCategory && selectedSeason) {
+      fetchMatches(selectedCategory);
+    }
+  }, [selectedCategory, selectedSeason]);
+
+  const handleSeasonSelect = async (season: { id: string; name: string }) => {
+    setSelectedSeason(season);
+    if (selectedCategory) {
+      await fetchMatches(selectedCategory);
+    }
+  };
+
   if (showEvaluation && selectedCategory && selectedMatchId) {
     return (
       <PlayerEvaluation
@@ -556,7 +569,7 @@ export default function Dashboard() {
                       {seasons.map((season) => (
                         <DropdownMenuItem
                           key={season.id}
-                          onClick={() => setSelectedSeason(season)}
+                          onClick={() => handleSeasonSelect(season)}
                         >
                           {season.name}
                         </DropdownMenuItem>
