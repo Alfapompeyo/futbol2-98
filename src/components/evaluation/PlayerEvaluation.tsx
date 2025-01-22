@@ -1,19 +1,9 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
-
-interface Player {
-  id: string;
-  name: string;
-  position?: string;
-  image_url?: string;
-}
+import { PlayersList } from "./PlayersList";
+import { EvaluationForm } from "./EvaluationForm";
+import { Player, EvaluationForm as EvaluationFormType, PlayerEvaluation as PlayerEvaluationType } from "./types";
 
 interface PlayerEvaluationProps {
   categoryId: string;
@@ -21,60 +11,10 @@ interface PlayerEvaluationProps {
   onBack: () => void;
 }
 
-interface EvaluationForm {
-  yellowCards: number;
-  redCards: number;
-  goals: number;
-  goalTypes: string[];
-  assists: number;
-  minutesPlayed: number;
-  saves: number;
-  crosses: number;
-  rating: number;
-  comments: string;
-  playedPosition: string;
-}
-
-interface PlayerEvaluation {
-  id: string;
-  yellow_cards: number;
-  red_cards: number;
-  goals: number;
-  goal_types: { type: string }[];
-  assists: number;
-  minutes_played: number;
-  saves: number;
-  crosses: number;
-  rating: number;
-  comments: string;
-  player_id: string;
-  played_position: string;
-}
-
-const goalTypeOptions = [
-  { value: "header", label: "De cabeza" },
-  { value: "penalty", label: "De penal" },
-  { value: "outside_box", label: "Fuera del área con pie" },
-  { value: "inside_box", label: "Dentro del área con pie" },
-];
-
-const positions = {
-  portero: "Portero",
-  defensa_central: "Defensa Central",
-  lateral_izquierdo: "Lateral Izquierdo",
-  lateral_derecho: "Lateral Derecho",
-  mediocampista_ofensivo: "Mediocampista Ofensivo",
-  mediocampista_defensivo: "Mediocampista Defensivo",
-  mediocampista_mixto: "Mediocampista Mixto",
-  delantero_centro: "Delantero Centro",
-  extremo_izquierdo: "Extremo Izquierdo",
-  extremo_derecho: "Extremo Derecho",
-};
-
 export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluationProps) {
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [evaluation, setEvaluation] = useState<EvaluationForm>({
+  const [evaluation, setEvaluation] = useState<EvaluationFormType>({
     yellowCards: 0,
     redCards: 0,
     goals: 0,
@@ -87,7 +27,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     comments: "",
     playedPosition: "",
   });
-  const [evaluations, setEvaluations] = useState<Record<string, PlayerEvaluation>>({});
+  const [evaluations, setEvaluations] = useState<Record<string, PlayerEvaluationType>>({});
   const { toast } = useToast();
 
   const fetchPlayers = async () => {
@@ -113,7 +53,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     }
 
     if (data) {
-      const evaluationsMap: Record<string, PlayerEvaluation> = {};
+      const evaluationsMap: Record<string, PlayerEvaluationType> = {};
       data.forEach((evaluation) => {
         evaluationsMap[evaluation.player_id] = evaluation;
       });
@@ -133,6 +73,13 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         goalTypes: [...evaluation.goalTypes, value]
       });
     }
+  };
+
+  const handleUpdateEvaluation = (field: keyof EvaluationFormType, value: any) => {
+    setEvaluation(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleSubmitEvaluation = async () => {
@@ -244,10 +191,6 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     }
   };
 
-  const getPositionLabel = (value: string) => {
-    return positions[value as keyof typeof positions] || value;
-  };
-
   return (
     <div className="h-screen bg-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -261,267 +204,20 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         <h2 className="text-2xl font-bold mb-6">Evaluación de Jugadores</h2>
 
         {!selectedPlayer ? (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]"></TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Posición</TableHead>
-                <TableHead className="w-[100px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players.map((player) => (
-                <TableRow key={player.id}>
-                  <TableCell>
-                    <Avatar>
-                      <AvatarImage src={player.image_url} alt={player.name} />
-                      <AvatarFallback>{player.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell>{player.name}</TableCell>
-                  <TableCell>
-                    {player.position ? getPositionLabel(player.position) : ''}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSelectPlayer(player)}
-                    >
-                      {evaluations[player.id] ? 'Editar' : 'Evaluar'}
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <PlayersList
+            players={players}
+            evaluations={evaluations}
+            onSelectPlayer={handleSelectPlayer}
+          />
         ) : (
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">
-                {evaluations[selectedPlayer.id] ? 'Editar evaluación de ' : 'Nueva evaluación para '} 
-                {selectedPlayer.name}
-              </h3>
-              <Button
-                variant="ghost"
-                onClick={() => setSelectedPlayer(null)}
-              >
-                Volver a la lista
-              </Button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Minutos Jugados
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="90"
-                  value={evaluation.minutesPlayed}
-                  onChange={(e) => setEvaluation({
-                    ...evaluation,
-                    minutesPlayed: parseInt(e.target.value) || 0
-                  })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tarjetas Amarillas
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={evaluation.yellowCards}
-                  onChange={(e) => setEvaluation({
-                    ...evaluation,
-                    yellowCards: parseInt(e.target.value) || 0
-                  })}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tarjetas Rojas
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={evaluation.redCards}
-                  onChange={(e) => setEvaluation({
-                    ...evaluation,
-                    redCards: parseInt(e.target.value) || 0
-                  })}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Goles
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={evaluation.goals}
-                  onChange={(e) => {
-                    const newGoals = parseInt(e.target.value) || 0;
-                    setEvaluation({
-                      ...evaluation,
-                      goals: newGoals,
-                      goalTypes: evaluation.goalTypes.slice(0, newGoals)
-                    });
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Gol ({evaluation.goalTypes.length} de {evaluation.goals})
-                </label>
-                <Select
-                  disabled={evaluation.goalTypes.length >= evaluation.goals}
-                  onValueChange={handleAddGoalType}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {goalTypeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {evaluation.goalTypes.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {evaluation.goalTypes.map((type, index) => (
-                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100">
-                        {goalTypeOptions.find(opt => opt.value === type)?.label}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Asistencias
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={evaluation.assists}
-                  onChange={(e) => setEvaluation({
-                    ...evaluation,
-                    assists: parseInt(e.target.value) || 0
-                  })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Atajadas
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={evaluation.saves}
-                  onChange={(e) => setEvaluation({
-                    ...evaluation,
-                    saves: parseInt(e.target.value) || 0
-                  })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Centros
-                </label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={evaluation.crosses}
-                  onChange={(e) => setEvaluation({
-                    ...evaluation,
-                    crosses: parseInt(e.target.value) || 0
-                  })}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Calificación (1-7)
-                </label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="7"
-                  value={evaluation.rating}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 1;
-                    setEvaluation({
-                      ...evaluation,
-                      rating: Math.min(Math.max(value, 1), 7)
-                    });
-                  }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Posición Jugada {selectedPlayer?.position && `(Posición habitual: ${getPositionLabel(selectedPlayer.position)})`}
-                </label>
-                <Select
-                  value={evaluation.playedPosition}
-                  onValueChange={(value) => setEvaluation({
-                    ...evaluation,
-                    playedPosition: value
-                  })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar posición" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(positions).map(([value, label]) => (
-                      <SelectItem 
-                        key={value} 
-                        value={value}
-                        className={value === selectedPlayer?.position ? "font-bold" : ""}
-                      >
-                        {label} {value === selectedPlayer?.position ? "(Posición habitual)" : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Comentarios
-              </label>
-              <Textarea
-                value={evaluation.comments}
-                onChange={(e) => setEvaluation({
-                  ...evaluation,
-                  comments: e.target.value
-                })}
-                placeholder="Ingrese comentarios sobre el desempeño del jugador..."
-                className="min-h-[100px]"
-              />
-            </div>
-            
-            <Button 
-              onClick={handleSubmitEvaluation}
-              className="w-full bg-[#0F172A] hover:bg-[#1E293B]"
-            >
-              {evaluations[selectedPlayer.id] ? 'Actualizar' : 'Guardar'} Evaluación
-            </Button>
-          </div>
+          <EvaluationForm
+            evaluation={evaluation}
+            player={selectedPlayer}
+            onUpdateEvaluation={handleUpdateEvaluation}
+            onAddGoalType={handleAddGoalType}
+            onSubmit={handleSubmitEvaluation}
+            onBack={() => setSelectedPlayer(null)}
+          />
         )}
       </div>
     </div>
