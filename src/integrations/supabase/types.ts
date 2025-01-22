@@ -133,6 +133,7 @@ export type Database = {
           },
         ]
       }
+
       matches: {
         Row: {
           category_id: string | null
@@ -373,4 +374,3 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
-
