@@ -53,7 +53,6 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       if (data) {
         const evaluationsMap: Record<string, PlayerEvaluationType> = {};
         data.forEach((evaluation) => {
-          // Asegurarse de que goal_types sea un array de objetos
           const goalTypes = Array.isArray(evaluation.goal_types) 
             ? evaluation.goal_types 
             : evaluation.goal_types 
@@ -114,7 +113,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       crosses: evaluation.crosses,
       rating: evaluation.rating,
       comments: evaluation.comments,
-      played_position: evaluation.playedPosition,
+      played_position: evaluation.playedPosition || null,
     };
 
     try {

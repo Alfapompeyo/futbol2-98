@@ -32,7 +32,7 @@ export interface PlayerEvaluation {
   rating: number;
   comments: string;
   player_id: string;
-  played_position: string;
+  played_position: string | null;
 }
 
 export const positions = {
