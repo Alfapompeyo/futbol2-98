@@ -63,7 +63,8 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
           setSelectedPlayers(data.positions as Record<string, string>);
         }
         if (data.substitutes && Array.isArray(data.substitutes)) {
-          setSubstitutePlayers(data.substitutes);
+          // Asegurarse de que los sustitutos sean strings
+          setSubstitutePlayers(data.substitutes.map(sub => String(sub)));
         }
         if (!savedFormations.some(f => f.value === data.formation)) {
           setSavedFormations(prev => [...prev, { value: data.formation, label: data.formation }]);
