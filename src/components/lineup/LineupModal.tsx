@@ -19,7 +19,7 @@ interface LineupModalProps {
   categoryId: string;
 }
 
-const formations = [
+const defaultFormations = [
   { value: "4-3-3", label: "4-3-3" },
   { value: "4-4-2", label: "4-4-2" },
   { value: "3-5-2", label: "3-5-2" },
@@ -33,6 +33,7 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [customFormation, setCustomFormation] = useState("");
   const [isCustom, setIsCustom] = useState(false);
+  const [savedFormations, setSavedFormations] = useState<Array<{ value: string; label: string }>>(defaultFormations);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -59,6 +60,10 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
         if (typeof data.positions === 'object' && data.positions !== null) {
           setSelectedPlayers(data.positions as Record<string, string>);
         }
+        // Si la formación no está en las formaciones guardadas, agregarla
+        if (!savedFormations.some(f => f.value === data.formation)) {
+          setSavedFormations(prev => [...prev, { value: data.formation, label: data.formation }]);
+        }
       }
     };
 
@@ -67,19 +72,46 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
   }, [categoryId, matchId]);
 
   const validateCustomFormation = (value: string) => {
-    // Actualizado para aceptar formaciones de 3 o 4 números
     const pattern = /^\d+-\d+-\d+(-\d+)?$/;
     if (!pattern.test(value)) return false;
     
     const numbers = value.split('-').map(Number);
     const sum = numbers.reduce((a, b) => a + b, 0);
-    return sum === 10; // 10 jugadores de campo (sin contar el portero)
+    return sum === 10;
   };
 
   const handleCustomFormationChange = (value: string) => {
     setCustomFormation(value);
     if (validateCustomFormation(value)) {
       setFormation(value);
+    }
+  };
+
+  const handleFormationSelect = (value: string) => {
+    if (value === "custom") {
+      setIsCustom(true);
+    } else {
+      setFormation(value);
+      setIsCustom(false);
+    }
+  };
+
+  const handleSaveCustomFormation = () => {
+    if (validateCustomFormation(customFormation)) {
+      const newFormation = { value: customFormation, label: customFormation };
+      setSavedFormations(prev => [...prev, newFormation]);
+      setFormation(customFormation);
+      setIsCustom(false);
+      toast({
+        title: "Éxito",
+        description: "Formación personalizada guardada",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Formación inválida",
+        variant: "destructive",
+      });
     }
   };
 
@@ -168,18 +200,12 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
         <div className="space-y-4">
           <div className="flex justify-between items-center gap-4">
             {!isCustom ? (
-              <Select value={formation} onValueChange={(value) => {
-                if (value === "custom") {
-                  setIsCustom(true);
-                } else {
-                  setFormation(value);
-                }
-              }}>
+              <Select value={formation} onValueChange={handleFormationSelect}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Selecciona formación" />
                 </SelectTrigger>
                 <SelectContent>
-                  {formations.map((f) => (
+                  {savedFormations.map((f) => (
                     <SelectItem key={f.value} value={f.value}>
                       {f.label}
                     </SelectItem>
@@ -195,6 +221,13 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
                   onChange={(e) => handleCustomFormationChange(e.target.value)}
                   className="w-[180px]"
                 />
+                <Button
+                  variant="outline"
+                  onClick={handleSaveCustomFormation}
+                  disabled={!validateCustomFormation(customFormation)}
+                >
+                  Guardar
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsCustom(false)}
