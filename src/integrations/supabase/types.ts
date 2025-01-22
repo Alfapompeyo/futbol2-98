@@ -27,6 +27,7 @@ export type Database = {
         }
         Relationships: []
       }
+
       match_lineups: {
         Row: {
           created_at: string
@@ -34,6 +35,7 @@ export type Database = {
           id: string
           match_id: string | null
           positions: Json | null
+          substitutes: Json | null
         }
         Insert: {
           created_at?: string
@@ -41,6 +43,7 @@ export type Database = {
           id?: string
           match_id?: string | null
           positions?: Json | null
+          substitutes?: Json | null
         }
         Update: {
           created_at?: string
@@ -48,6 +51,7 @@ export type Database = {
           id?: string
           match_id?: string | null
           positions?: Json | null
+          substitutes?: Json | null
         }
         Relationships: [
           {
@@ -56,9 +60,10 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "matches"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
+
       match_statistics: {
         Row: {
           assists: number | null
@@ -368,3 +373,4 @@ export type CompositeTypes<
   : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
     ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
+
