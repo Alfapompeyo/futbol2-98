@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Users } from "lucide-react";
 
 interface Player {
   id: string;
@@ -31,6 +32,7 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
   const [formation, setFormation] = useState("4-3-3");
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
+  const [substitutePlayers, setSubstitutePlayers] = useState<string[]>([]);
   const [customFormation, setCustomFormation] = useState("");
   const [isCustom, setIsCustom] = useState(false);
   const [savedFormations, setSavedFormations] = useState<Array<{ value: string; label: string }>>(defaultFormations);
@@ -60,7 +62,9 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
         if (typeof data.positions === 'object' && data.positions !== null) {
           setSelectedPlayers(data.positions as Record<string, string>);
         }
-        // Si la formación no está en las formaciones guardadas, agregarla
+        if (data.substitutes && Array.isArray(data.substitutes)) {
+          setSubstitutePlayers(data.substitutes);
+        }
         if (!savedFormations.some(f => f.value === data.formation)) {
           setSavedFormations(prev => [...prev, { value: data.formation, label: data.formation }]);
         }
@@ -165,6 +169,18 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
     }));
   };
 
+  const handleSubstituteSelect = (playerId: string) => {
+    if (substitutePlayers.includes(playerId)) {
+      setSubstitutePlayers(prev => prev.filter(id => id !== playerId));
+    } else {
+      setSubstitutePlayers(prev => [...prev, playerId]);
+    }
+  };
+
+  const isPlayerSelected = (playerId: string) => {
+    return Object.values(selectedPlayers).includes(playerId) || substitutePlayers.includes(playerId);
+  };
+
   const handleSaveLineup = async () => {
     const { error } = await supabase
       .from("match_lineups")
@@ -172,6 +188,7 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
         match_id: matchId,
         formation: formation,
         positions: selectedPlayers,
+        substitutes: substitutePlayers
       }, {
         onConflict: 'match_id'
       });
@@ -193,7 +210,7 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>Alineación del Equipo</DialogTitle>
         </DialogHeader>
@@ -241,43 +258,70 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
             </Button>
           </div>
 
-          <div className="relative w-full h-[600px] bg-green-600 rounded-lg overflow-hidden">
-            {/* Campo de fútbol */}
-            <div className="absolute inset-0 border-2 border-white">
-              {/* Área grande inferior */}
-              <div className="absolute bottom-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
-              {/* Área grande superior */}
-              <div className="absolute top-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
-              {/* Círculo central */}
-              <div className="absolute top-[45%] left-[45%] w-[10%] h-[10%] border-2 border-white rounded-full" />
-              {/* Línea media */}
-              <div className="absolute top-[50%] left-0 right-0 h-[2px] bg-white" />
+          <div className="flex gap-4">
+            <div className="relative w-[70%] h-[600px] bg-green-600 rounded-lg overflow-hidden">
+              {/* Campo de fútbol */}
+              <div className="absolute inset-0 border-2 border-white">
+                <div className="absolute bottom-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
+                <div className="absolute top-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
+                <div className="absolute top-[45%] left-[45%] w-[10%] h-[10%] border-2 border-white rounded-full" />
+                <div className="absolute top-[50%] left-0 right-0 h-[2px] bg-white" />
+              </div>
+
+              {/* Jugadores titulares */}
+              {getPositionsFromFormation(formation).map((pos) => (
+                <div
+                  key={pos.position}
+                  className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                  style={{ top: pos.top, left: pos.left }}
+                >
+                  <Select
+                    value={selectedPlayers[pos.position] || ""}
+                    onValueChange={(value) => handlePlayerSelect(pos.position, value)}
+                  >
+                    <SelectTrigger className="w-[120px] bg-white">
+                      <SelectValue placeholder="Jugador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {players
+                        .filter(player => !isPlayerSelected(player.id) || selectedPlayers[pos.position] === player.id)
+                        .map((player) => (
+                          <SelectItem key={player.id} value={player.id}>
+                            {player.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
             </div>
 
-            {/* Jugadores */}
-            {getPositionsFromFormation(formation).map((pos) => (
-              <div
-                key={pos.position}
-                className="absolute transform -translate-x-1/2 -translate-y-1/2"
-                style={{ top: pos.top, left: pos.left }}
-              >
-                <Select
-                  value={selectedPlayers[pos.position] || ""}
-                  onValueChange={(value) => handlePlayerSelect(pos.position, value)}
-                >
-                  <SelectTrigger className="w-[120px] bg-white">
-                    <SelectValue placeholder="Jugador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {players.map((player) => (
-                      <SelectItem key={player.id} value={player.id}>
-                        {player.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {/* Banca */}
+            <div className="w-[30%] h-[600px] bg-gray-100 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="h-5 w-5" />
+                <h3 className="font-semibold">Banca</h3>
               </div>
-            ))}
+              <div className="space-y-2">
+                {players
+                  .filter(player => !Object.values(selectedPlayers).includes(player.id))
+                  .map((player) => (
+                    <div
+                      key={player.id}
+                      className="flex items-center gap-2 p-2 bg-white rounded-lg cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleSubstituteSelect(player.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={substitutePlayers.includes(player.id)}
+                        onChange={() => {}}
+                        className="h-4 w-4"
+                      />
+                      <span>{player.name}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
