@@ -107,15 +107,15 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       .select("*")
       .eq("match_id", matchId);
 
-    if (!error && data) {
+    if (error) {
+      console.error('Error fetching evaluations:', error);
+      return;
+    }
+
+    if (data) {
       const evaluationsMap: Record<string, PlayerEvaluation> = {};
       data.forEach((evaluation) => {
-        evaluationsMap[evaluation.player_id] = {
-          ...evaluation,
-          goal_types: Array.isArray(evaluation.goal_types) 
-            ? evaluation.goal_types.map((gt: any) => ({ type: gt.type })) 
-            : []
-        };
+        evaluationsMap[evaluation.player_id] = evaluation;
       });
       setEvaluations(evaluationsMap);
     }
@@ -157,31 +157,26 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       played_position: evaluation.playedPosition,
     };
 
-    console.log('Saving evaluation:', evaluationData);
-
     try {
-      let error;
+      let response;
+      
       if (existingEvaluation) {
-        const { error: updateError } = await supabase
+        response = await supabase
           .from("match_statistics")
           .update(evaluationData)
-          .eq('id', existingEvaluation.id);
-        error = updateError;
+          .eq('id', existingEvaluation.id)
+          .select()
+          .single();
       } else {
-        const { error: insertError } = await supabase
+        response = await supabase
           .from("match_statistics")
-          .insert([evaluationData]);
-        error = insertError;
+          .insert([evaluationData])
+          .select()
+          .single();
       }
 
-      if (error) {
-        console.error('Error saving evaluation:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "No se pudo guardar la evaluación",
-        });
-        return;
+      if (response.error) {
+        throw response.error;
       }
 
       toast({
@@ -215,12 +210,10 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
   };
 
   const handleSelectPlayer = (player: Player) => {
-    console.log('Selecting player:', player);
     setSelectedPlayer(player);
     const existingEvaluation = evaluations[player.id];
     
     if (existingEvaluation) {
-      console.log('Found existing evaluation:', existingEvaluation);
       setEvaluation({
         yellowCards: existingEvaluation.yellow_cards || 0,
         redCards: existingEvaluation.red_cards || 0,
@@ -235,7 +228,6 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         playedPosition: existingEvaluation.played_position || player.position || "",
       });
     } else {
-      console.log('No existing evaluation, using default values and player position:', player.position);
       setEvaluation({
         yellowCards: 0,
         redCards: 0,
@@ -253,18 +245,6 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
   };
 
   const getPositionLabel = (value: string) => {
-    const positions = {
-      portero: "Portero",
-      defensa_central: "Defensa Central",
-      lateral_izquierdo: "Lateral Izquierdo",
-      lateral_derecho: "Lateral Derecho",
-      mediocampista_ofensivo: "Mediocampista Ofensivo",
-      mediocampista_defensivo: "Mediocampista Defensivo",
-      mediocampista_mixto: "Mediocampista Mixto",
-      delantero_centro: "Delantero Centro",
-      extremo_izquierdo: "Extremo Izquierdo",
-      extremo_derecho: "Extremo Derecho",
-    };
     return positions[value as keyof typeof positions] || value;
   };
 

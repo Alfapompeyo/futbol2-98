@@ -123,13 +123,11 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
     const positions: { top: string; left: string; position: string }[] = [];
     const numbers = formation.split("-").map(Number);
 
-    // Portero
     positions.push({ top: "85%", left: "50%", position: "GK" });
 
     let currentTop = 70;
     const spacing = 15;
 
-    // Función auxiliar para distribuir jugadores en una línea
     const distributePlayersInLine = (count: number, top: number, prefix: string) => {
       for (let i = 0; i < count; i++) {
         positions.push({
@@ -140,16 +138,12 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
       }
     };
 
-    // Defensas
     distributePlayersInLine(numbers[0], 70, "DEF");
 
-    // Distribuir el resto de líneas según la cantidad de números en la formación
     if (numbers.length === 3) {
-      // Formación tradicional (ej: 4-3-3)
       distributePlayersInLine(numbers[1], 45, "MID");
       distributePlayersInLine(numbers[2], 20, "FWD");
     } else if (numbers.length === 4) {
-      // Formación con 4 líneas (ej: 4-2-3-1)
       const midTop1 = 55;
       const midTop2 = 40;
       const fwdTop = 20;
@@ -182,33 +176,22 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
   };
 
   const handleSaveLineup = async () => {
-    console.log('Saving lineup:', {
-      match_id: matchId,
-      formation: formation,
-      positions: selectedPlayers,
-      substitutes: substitutePlayers
-    });
-
     try {
+      const lineupData = {
+        match_id: matchId,
+        formation: formation,
+        positions: selectedPlayers,
+        substitutes: substitutePlayers
+      };
+
       const { error } = await supabase
         .from("match_lineups")
-        .upsert({
-          match_id: matchId,
-          formation: formation,
-          positions: selectedPlayers,
-          substitutes: substitutePlayers
-        }, {
+        .upsert(lineupData, {
           onConflict: 'match_id'
         });
 
       if (error) {
-        console.error('Error saving lineup:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo guardar la alineación",
-          variant: "destructive",
-        });
-        return;
+        throw error;
       }
 
       toast({
@@ -217,11 +200,11 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
       });
       onClose();
     } catch (error) {
-      console.error('Error in lineup submission:', error);
+      console.error('Error saving lineup:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Ocurrió un error al guardar la alineación",
+        description: "No se pudo guardar la alineación",
       });
     }
   };
@@ -278,7 +261,6 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
 
           <div className="flex gap-4">
             <div className="relative w-[70%] h-[600px] bg-green-600 rounded-lg overflow-hidden">
-              {/* Campo de fútbol */}
               <div className="absolute inset-0 border-2 border-white">
                 <div className="absolute bottom-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
                 <div className="absolute top-0 left-[20%] right-[20%] h-[20%] border-2 border-white" />
@@ -286,7 +268,6 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
                 <div className="absolute top-[50%] left-0 right-0 h-[2px] bg-white" />
               </div>
 
-              {/* Jugadores titulares */}
               {getPositionsFromFormation(formation).map((pos) => (
                 <div
                   key={pos.position}
@@ -314,7 +295,6 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
               ))}
             </div>
 
-            {/* Banca */}
             <div className="w-[30%] h-[600px] bg-gray-100 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-4">
                 <Users className="h-5 w-5" />
