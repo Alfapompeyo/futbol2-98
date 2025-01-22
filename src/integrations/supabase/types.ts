@@ -75,6 +75,7 @@ export type Database = {
           red_cards: number | null
           saves: number | null
           yellow_cards: number | null
+          played_position: string | null
         }
         Insert: {
           assists?: number | null
@@ -91,6 +92,7 @@ export type Database = {
           red_cards?: number | null
           saves?: number | null
           yellow_cards?: number | null
+          played_position?: string | null
         }
         Update: {
           assists?: number | null
@@ -107,6 +109,7 @@ export type Database = {
           red_cards?: number | null
           saves?: number | null
           yellow_cards?: number | null
+          played_position?: string | null
         }
         Relationships: [
           {
@@ -278,7 +281,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {

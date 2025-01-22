@@ -32,6 +32,7 @@ interface EvaluationForm {
   crosses: number;
   rating: number;
   comments: string;
+  playedPosition: string;
 }
 
 interface PlayerEvaluation {
@@ -47,6 +48,7 @@ interface PlayerEvaluation {
   rating: number;
   comments: string;
   player_id: string;
+  played_position: string;
 }
 
 const goalTypeOptions = [
@@ -55,6 +57,19 @@ const goalTypeOptions = [
   { value: "outside_box", label: "Fuera del área con pie" },
   { value: "inside_box", label: "Dentro del área con pie" },
 ];
+
+const positions = {
+  portero: "Portero",
+  defensa_central: "Defensa Central",
+  lateral_izquierdo: "Lateral Izquierdo",
+  lateral_derecho: "Lateral Derecho",
+  mediocampista_ofensivo: "Mediocampista Ofensivo",
+  mediocampista_defensivo: "Mediocampista Defensivo",
+  mediocampista_mixto: "Mediocampista Mixto",
+  delantero_centro: "Delantero Centro",
+  extremo_izquierdo: "Extremo Izquierdo",
+  extremo_derecho: "Extremo Derecho",
+};
 
 export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluationProps) {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -70,6 +85,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
     crosses: 0,
     rating: 1,
     comments: "",
+    playedPosition: "",
   });
   const [evaluations, setEvaluations] = useState<Record<string, PlayerEvaluation>>({});
   const { toast } = useToast();
@@ -138,6 +154,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       crosses: evaluation.crosses,
       rating: evaluation.rating,
       comments: evaluation.comments,
+      played_position: evaluation.playedPosition,
     };
 
     let error;
@@ -182,6 +199,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       crosses: 0,
       rating: 1,
       comments: "",
+      playedPosition: "",
     });
   };
 
@@ -201,6 +219,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         crosses: existingEvaluation.crosses || 0,
         rating: existingEvaluation.rating || 1,
         comments: existingEvaluation.comments || "",
+        playedPosition: existingEvaluation.played_position || "",
       });
     } else {
       setEvaluation({
@@ -214,6 +233,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         crosses: 0,
         rating: 1,
         comments: "",
+        playedPosition: "",
       });
     }
   };
@@ -455,6 +475,30 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                     });
                   }}
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Posición Jugada
+                </label>
+                <Select
+                  value={evaluation.playedPosition}
+                  onValueChange={(value) => setEvaluation({
+                    ...evaluation,
+                    playedPosition: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar posición" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(positions).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
