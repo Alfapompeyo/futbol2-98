@@ -63,7 +63,6 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
           setSelectedPlayers(data.positions as Record<string, string>);
         }
         if (data.substitutes && Array.isArray(data.substitutes)) {
-          // Asegurarse de que los sustitutos sean strings
           setSubstitutePlayers(data.substitutes.map(sub => String(sub)));
         }
         if (!savedFormations.some(f => f.value === data.formation)) {
@@ -183,29 +182,47 @@ export function LineupModal({ isOpen, onClose, matchId, categoryId }: LineupModa
   };
 
   const handleSaveLineup = async () => {
-    const { error } = await supabase
-      .from("match_lineups")
-      .upsert({
-        match_id: matchId,
-        formation: formation,
-        positions: selectedPlayers,
-        substitutes: substitutePlayers
-      }, {
-        onConflict: 'match_id'
-      });
+    console.log('Saving lineup:', {
+      match_id: matchId,
+      formation: formation,
+      positions: selectedPlayers,
+      substitutes: substitutePlayers
+    });
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo guardar la alineación",
-        variant: "destructive",
-      });
-    } else {
+    try {
+      const { error } = await supabase
+        .from("match_lineups")
+        .upsert({
+          match_id: matchId,
+          formation: formation,
+          positions: selectedPlayers,
+          substitutes: substitutePlayers
+        }, {
+          onConflict: 'match_id'
+        });
+
+      if (error) {
+        console.error('Error saving lineup:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo guardar la alineación",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Éxito",
         description: "Alineación guardada correctamente",
       });
       onClose();
+    } catch (error) {
+      console.error('Error in lineup submission:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Ocurrió un error al guardar la alineación",
+      });
     }
   };
 

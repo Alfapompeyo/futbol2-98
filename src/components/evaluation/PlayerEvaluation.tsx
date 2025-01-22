@@ -157,50 +157,61 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
       played_position: evaluation.playedPosition,
     };
 
-    let error;
+    console.log('Saving evaluation:', evaluationData);
 
-    if (existingEvaluation) {
-      const { error: updateError } = await supabase
-        .from("match_statistics")
-        .update(evaluationData)
-        .eq('id', existingEvaluation.id);
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase
-        .from("match_statistics")
-        .insert([evaluationData]);
-      error = insertError;
-    }
+    try {
+      let error;
+      if (existingEvaluation) {
+        const { error: updateError } = await supabase
+          .from("match_statistics")
+          .update(evaluationData)
+          .eq('id', existingEvaluation.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("match_statistics")
+          .insert([evaluationData]);
+        error = insertError;
+      }
 
-    if (error) {
+      if (error) {
+        console.error('Error saving evaluation:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No se pudo guardar la evaluación",
+        });
+        return;
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Evaluación guardada correctamente",
+      });
+
+      await fetchEvaluations();
+      setSelectedPlayer(null);
+      setEvaluation({
+        yellowCards: 0,
+        redCards: 0,
+        goals: 0,
+        goalTypes: [],
+        assists: 0,
+        minutesPlayed: 0,
+        saves: 0,
+        crosses: 0,
+        rating: 1,
+        comments: "",
+        playedPosition: "",
+      });
+    } catch (error) {
+      console.error('Error in evaluation submission:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo guardar la evaluación",
+        description: "Ocurrió un error al guardar la evaluación",
       });
-      return;
     }
-
-    toast({
-      title: "Éxito",
-      description: "Evaluación guardada correctamente",
-    });
-
-    fetchEvaluations();
-    setSelectedPlayer(null);
-    setEvaluation({
-      yellowCards: 0,
-      redCards: 0,
-      goals: 0,
-      goalTypes: [],
-      assists: 0,
-      minutesPlayed: 0,
-      saves: 0,
-      crosses: 0,
-      rating: 1,
-      comments: "",
-      playedPosition: "",
-    });
   };
 
   const handleSelectPlayer = (player: Player) => {
