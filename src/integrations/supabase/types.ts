@@ -130,7 +130,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
 
