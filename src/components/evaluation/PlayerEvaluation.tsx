@@ -215,10 +215,12 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
   };
 
   const handleSelectPlayer = (player: Player) => {
+    console.log('Selecting player:', player);
     setSelectedPlayer(player);
     const existingEvaluation = evaluations[player.id];
     
     if (existingEvaluation) {
+      console.log('Found existing evaluation:', existingEvaluation);
       setEvaluation({
         yellowCards: existingEvaluation.yellow_cards || 0,
         redCards: existingEvaluation.red_cards || 0,
@@ -230,9 +232,10 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         crosses: existingEvaluation.crosses || 0,
         rating: existingEvaluation.rating || 1,
         comments: existingEvaluation.comments || "",
-        playedPosition: existingEvaluation.played_position || "",
+        playedPosition: existingEvaluation.played_position || player.position || "",
       });
     } else {
+      console.log('No existing evaluation, using default values and player position:', player.position);
       setEvaluation({
         yellowCards: 0,
         redCards: 0,
@@ -244,7 +247,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
         crosses: 0,
         rating: 1,
         comments: "",
-        playedPosition: "",
+        playedPosition: player.position || "",
       });
     }
   };
@@ -490,7 +493,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Posición Jugada
+                  Posición Jugada {selectedPlayer?.position && `(Posición habitual: ${getPositionLabel(selectedPlayer.position)})`}
                 </label>
                 <Select
                   value={evaluation.playedPosition}
@@ -504,8 +507,12 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(positions).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
+                      <SelectItem 
+                        key={value} 
+                        value={value}
+                        className={value === selectedPlayer?.position ? "font-bold" : ""}
+                      >
+                        {label} {value === selectedPlayer?.position ? "(Posición habitual)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
