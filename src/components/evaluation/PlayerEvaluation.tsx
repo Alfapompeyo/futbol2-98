@@ -42,22 +42,35 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
   };
 
   const fetchEvaluations = async () => {
-    const { data, error } = await supabase
-      .from("match_statistics")
-      .select("*")
-      .eq("match_id", matchId);
+    try {
+      const { data, error } = await supabase
+        .from("match_statistics")
+        .select("*")
+        .eq("match_id", matchId);
 
-    if (error) {
+      if (error) throw error;
+
+      if (data) {
+        const evaluationsMap: Record<string, PlayerEvaluationType> = {};
+        data.forEach((evaluation) => {
+          // Asegurarse de que goal_types sea un array de objetos
+          const goalTypes = Array.isArray(evaluation.goal_types) 
+            ? evaluation.goal_types 
+            : evaluation.goal_types 
+              ? JSON.parse(evaluation.goal_types)
+              : [];
+
+          evaluationsMap[evaluation.player_id] = {
+            ...evaluation,
+            goal_types: goalTypes.map((type: string | { type: string }) => 
+              typeof type === 'string' ? { type } : type
+            )
+          };
+        });
+        setEvaluations(evaluationsMap);
+      }
+    } catch (error) {
       console.error('Error fetching evaluations:', error);
-      return;
-    }
-
-    if (data) {
-      const evaluationsMap: Record<string, PlayerEvaluationType> = {};
-      data.forEach((evaluation) => {
-        evaluationsMap[evaluation.player_id] = evaluation;
-      });
-      setEvaluations(evaluationsMap);
     }
   };
 
@@ -122,9 +135,7 @@ export function PlayerEvaluation({ categoryId, matchId, onBack }: PlayerEvaluati
           .single();
       }
 
-      if (response.error) {
-        throw response.error;
-      }
+      if (response.error) throw response.error;
 
       toast({
         title: "Éxito",

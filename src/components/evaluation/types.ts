@@ -24,7 +24,7 @@ export interface PlayerEvaluation {
   yellow_cards: number;
   red_cards: number;
   goals: number;
-  goal_types: { type: string }[];
+  goal_types: Array<{ type: string }>;
   assists: number;
   minutes_played: number;
   saves: number;
