@@ -27,7 +27,6 @@ export type Database = {
         }
         Relationships: []
       }
-
       match_lineups: {
         Row: {
           created_at: string
@@ -35,7 +34,6 @@ export type Database = {
           id: string
           match_id: string | null
           positions: Json | null
-          substitutes: Json | null
         }
         Insert: {
           created_at?: string
@@ -43,7 +41,6 @@ export type Database = {
           id?: string
           match_id?: string | null
           positions?: Json | null
-          substitutes?: Json | null
         }
         Update: {
           created_at?: string
@@ -51,7 +48,6 @@ export type Database = {
           id?: string
           match_id?: string | null
           positions?: Json | null
-          substitutes?: Json | null
         }
         Relationships: [
           {
@@ -60,10 +56,9 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "matches"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-
       match_statistics: {
         Row: {
           assists: number | null
@@ -80,7 +75,6 @@ export type Database = {
           red_cards: number | null
           saves: number | null
           yellow_cards: number | null
-          played_position: string | null
         }
         Insert: {
           assists?: number | null
@@ -97,7 +91,6 @@ export type Database = {
           red_cards?: number | null
           saves?: number | null
           yellow_cards?: number | null
-          played_position?: string | null
         }
         Update: {
           assists?: number | null
@@ -114,7 +107,6 @@ export type Database = {
           red_cards?: number | null
           saves?: number | null
           yellow_cards?: number | null
-          played_position?: string | null
         }
         Relationships: [
           {
@@ -130,10 +122,9 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "players"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
-
       matches: {
         Row: {
           category_id: string | null
@@ -287,7 +278,7 @@ export type Tables<
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never,
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
